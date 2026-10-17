@@ -20,6 +20,16 @@ pub fn paint_mark(ui: &egui::Ui, rect: Rect, color: Color32) {
 
 '''+s[end:]
     s=s.replace('/// ArtCraft brand blue (from `docs/brand/artcraft-mark.svg`).','/// Accent colour for the independent build.').replace('Color32::from_rgb(0x4e, 0x7b, 0xfb)','Color32::from_rgb(0x35, 0x55, 0x48)').replace('Part of the ArtCraft suite of open creative tools.','Independent modified build, based on DesignCraft by the ArtCraft team.').replace('//! ArtCraft mark, version, and community links (Discord first and largest), plus the other ArtCraft','//! version and upstream community links, plus the other ArtCraft')
+    # Keep authorship credits without advertising upstream support for this fork.
+    start=s.index('            if discord_button(ui, "Join the ArtCraft Discord"')
+    end=s.index('            ui.add_space(12.0);',start)
+    s=s[:start]+s[end:]
+    start=s.index('/// A text link that opens `url`.')
+    end=s.index('pub fn show(',start)
+    s=s[:start]+s[end:]
+    s=s.replace('use serde_json::json;\n','')
+    s=s.replace("    let mut open: Option<&'static str> = None;\n",'')
+    s=s.replace('    if let Some(k) = open {\n        let _ = app.run(&format!("help.{k}"), json!({}));\n    }\n','')
     p.write_text(s)
     # These are not included in binaries; also omit them from reconstructed distribution source.
     for p in (source/'docs/brand').glob('artcraft-*'):

@@ -1,8 +1,8 @@
 {
   "patches/designcraft-0.8.0-indd.patch": "729fea872768790b517acecf995a3ca97098829d884bfca5c1293c8bbe20d6da",
-  "scripts/customize.py": "5237e8f33dbadf5189a38ca1d6916c24e93c65bbf619167b4923cb4e20ab24fd",
+  "scripts/customize.py": "dcf7b08b3836006067b557bb0fe0549c2d5cef139688c7ea9604830a07de804a",
   "scripts/package.py": "3b0f994c922d56f28d3744b2b85d40494224e20641091c4e3ad4cf32ccd266b1",
-  "scripts/verify_package.py": "3fb23da3b26f5eb241b6f6952f6904941ee3e034cbb242cf617db97fe558e168",
+  "scripts/verify_package.py": "2ac9b3c59e062471a101bfd63b3414bd435b03881c3c7116c464924346b68a46",
   "scripts/smoke_packaged.py": "71315d18281d87340ea4ab71c6510f2bdb3e0e34c902da7be067780dd714f14d",
   "upstream.json": "744cd48a4a76de6cc470bbeb7be921600b1480fb1b1842f762735e47fa2143d9",
   "audit/THIRD-PARTY-NOTICES.txt.gz": "61cb65f78949b6d4224b9af269926032062313a062887ebd55c768fb5c147300"

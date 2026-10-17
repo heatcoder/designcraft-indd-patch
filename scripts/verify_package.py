@@ -18,6 +18,7 @@ assert 'const MARK_PATH' not in about and '/// The ArtCraft mark outline' not in
 assert 'const MARK_PATH' not in patch and '/// The ArtCraft mark outline' not in patch
 assert not list((source/'docs/brand').glob('artcraft-*')),'Restricted artwork remains in reconstructed source'
 assert 'ArtCraft team' in about,'Required author credit missing'
+assert 'Join the ArtCraft Discord' not in about and 'More ArtCraft apps' not in about,'Upstream promotional branding remains'
 # The shipped font input is deliberately limited to the pinned OFL font.
 fonts={f.name:sha(f) for f in (root/'fonts').rglob('*') if f.suffix.lower() in ('.ttf','.otf','.ttc')}
 assert list(fonts.values())==['312e0e7c3cc15fa09eb42a8f749eeb246b593ed420e3c81aafe8d910c3a6fb56'],fonts

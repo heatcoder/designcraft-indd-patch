@@ -24,7 +24,7 @@ The open fixture manifest identifies CC0, MIT and BSD documents, URLs and hashes
 
 ## Explicit exclusions
 
-No Typeit! sources, VB6 controls/OCX, proprietary document fonts (including Minion Pro), private INDD files, user screenshots, Adobe applications or proprietary Adobe SDK binaries are selected by the installer payload. Runtime payloads are restricted to the freshly built executables, licensed app icon, notices and required platform metadata. An extraction verifier compares the actual installer payload with staging and rejects unexpected files. Source reconstruction removes restricted ArtCraft artwork; textual author credits remain.
+No Typeit! sources, VB6 controls/OCX, proprietary document fonts (including Minion Pro), private INDD files, user screenshots, Adobe applications or proprietary Adobe SDK binaries are selected by the installer payload. Runtime payloads are restricted to the freshly built executables, licensed app icon, notices and required platform metadata. An extraction verifier compares the actual installer payload with staging and rejects unexpected files. Source reconstruction removes restricted ArtCraft artwork; textual author credits remain. The About window’s upstream promotional section is also removed.
 
 ## Remaining decisions
 
