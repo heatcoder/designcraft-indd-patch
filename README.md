@@ -1,10 +1,8 @@
-# Distribution review in progress
+# MalayalamPatch by iRajeev
 
-Public installer release is paused. See `audit/AUDIT.md`, the complete dependency inventory and collected notices. Build artifacts are review candidates, not cleared releases.
+A free enhancement for DesignCraft, adding INDD opening and Malayalam typing. Published by **iRajeev**, built on open-source projects; credits and licences are included.
 
-# DesignCraft INDD import patch
-
-An independent backport of direct INDD/INDT opening to **DesignCraft 0.8.0**. Installer and download-page branding: **irajeev.com**.
+**Downloads are temporarily paused while release checks are completed.** See [release notes](site/indd/release-notes.html) and the [technical audit](audit/AUDIT.md) for details.
 
 This is a patched application build, not an Adobe plugin. It installs as **DesignCraft** alongside the official app. Open `.indd` or `.indt` with **File → Open**, drag and drop, or the command line. Conversion happens locally and in memory. Save edits as `.designcraft` or export `.idml`; INDD writing is not supported.
 
@@ -30,7 +28,7 @@ The macOS build also exits after preserving recovery data and settings to avoid 
 
 Download the matching file from [Releases](https://github.com/heatcoder/designcraft-indd-patch/releases).
 
-- **macOS:** open the `.pkg` for Intel or Apple Silicon. Launch **Applications → DesignCraft**. A `.zip` application is also provided.
+- **macOS:** open the `.pkg` for Intel or Apple Silicon. Launch **Applications → MalayalamPatch → DesignCraft**. A `.zip` application is also provided.
 - **Windows:** open the `.exe` for Intel/AMD x64 or ARM64. Launch **DesignCraft** from Start.
 - **Linux (Debian/Ubuntu):** open the `.deb` using your software installer. A portable `.tar.gz` is provided for other distributions, where required system libraries must already be installed.
 
