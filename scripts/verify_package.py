@@ -50,7 +50,8 @@ assert not excluded.intersection(inventory.values()),'Restricted artwork file de
 for path in inventory:
  name=Path(path).name.lower()
  assert not name.endswith(('.indd','.indt','.idml','.designcraft','.ocx','.vbp','.frm','.frx','.bas','.cls','.ttf','.otf','.ttc')),path
- assert not any(x in name for x in ('minion','typeit','artcraft-mark','artcraft-logo')),path
+ is_exclusion_notice = name == 'typeit-exclusion.json' and Path(path).parent.name == 'Notices'
+ assert is_exclusion_notice or not any(x in name for x in ('minion','typeit','artcraft-mark','artcraft-logo')),path
 bundle=(notices/'THIRD-PARTY-NOTICES.txt').read_bytes();assert bundle==gzip.decompress((root/'audit/THIRD-PARTY-NOTICES.txt.gz').read_bytes())
 for required in [b'dispatch-0.2.0/DISTRIBUTOR-NOTICE.txt',b'Steven Sheldon',b'r-efi-5.3.0/AUTHORS',b'Adobe-XMP',b'LICENSE_FOXIT']:
  assert required in bundle,required
