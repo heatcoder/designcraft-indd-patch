@@ -1,9 +1,9 @@
 {
   "patches/designcraft-0.8.0-indd.patch": "729fea872768790b517acecf995a3ca97098829d884bfca5c1293c8bbe20d6da",
-  "scripts/customize.py": "572b3a537e1759c10f8957aba987565b7ac4f59ea4f2ae7a53f30c08fb936762",
-  "scripts/package.py": "3b0f994c922d56f28d3744b2b85d40494224e20641091c4e3ad4cf32ccd266b1",
-  "scripts/verify_package.py": "d4d0ddac2153b8b83f629dd58cbb5338d2e833ac484ebfa45d802ee38660c451",
-  "scripts/smoke_packaged.py": "71315d18281d87340ea4ab71c6510f2bdb3e0e34c902da7be067780dd714f14d",
+  "scripts/customize.py": "c92c9dd9e7f741e8a1d17d82d6d23e755fac0c51a7ff3efb7ef5de83f282b033",
+  "scripts/package.py": "538d61e4e45f89fe4b76bcd2c483c1e3dc65a3014657940996c25661d1a9137c",
+  "scripts/verify_package.py": "87c920998d243fa50b0057999c291ad3d8233a6f6aa0400091a4c2a4be0920d9",
+  "scripts/smoke_packaged.py": "07c420cd71fd9798d7581133c7af81d54fbf58e5950818e126c965b362b2c85a",
   "upstream.json": "744cd48a4a76de6cc470bbeb7be921600b1480fb1b1842f762735e47fa2143d9",
   "audit/THIRD-PARTY-NOTICES.txt.gz": "61cb65f78949b6d4224b9af269926032062313a062887ebd55c768fb5c147300"
 }

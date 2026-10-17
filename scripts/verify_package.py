@@ -13,13 +13,13 @@ def compare(expected,actual,allowed=()):
  unexpected=[k for k in v if k not in e and not any(Path(k).match(x) for x in allowed)]
  assert not unexpected,('Unexpected installer files',unexpected)
  return v
-source=a.source.resolve();about=(source/'crates/ui-egui/src/about.rs').read_text();patch=(root/'patches/designcraft-0.8.0-indd.patch').read_text()
+source=a.source.resolve();about=(source/'crates/ui-egui/src/about.rs').read_text(encoding='utf-8');patch=(root/'patches/designcraft-0.8.0-indd.patch').read_text(encoding='utf-8')
 assert 'const MARK_PATH' not in about and '/// The ArtCraft mark outline' not in about
 assert 'const MARK_PATH' not in patch and '/// The ArtCraft mark outline' not in patch
 assert not list((source/'docs/brand').glob('artcraft-*')),'Restricted artwork remains in reconstructed source'
 assert 'ArtCraft team' in about,'Required author credit missing'
 assert 'Join the ArtCraft Discord' not in about and 'More ArtCraft apps' not in about,'Upstream promotional branding remains'
-chrome=(source/'crates/ui-egui/src/chrome.rs').read_text()
+chrome=(source/'crates/ui-egui/src/chrome.rs').read_text(encoding='utf-8')
 assert 'Join the ArtCraft community' not in chrome and 'Independent DesignCraft build' in chrome,'Welcome branding not customized'
 # The shipped font input is deliberately limited to the pinned OFL font.
 fonts={f.name:sha(f) for f in (root/'fonts').rglob('*') if f.suffix.lower() in ('.ttf','.otf','.ttc')}
@@ -42,7 +42,7 @@ else:
  # Record imports if Visual Studio dumpbin is available on this runner.
  dumpbin=shutil.which('dumpbin')
  if dumpbin:run(dumpbin,'/DEPENDENTS',binary)
-excluded={x['sha256'] for x in json.loads((root/'audit/excluded-brand-assets.json').read_text())}
+excluded={x['sha256'] for x in json.loads((root/'audit/excluded-brand-assets.json').read_text(encoding='utf-8'))}
 assert not excluded.intersection(inventory.values()),'Restricted artwork file detected'
 for path in inventory:
  name=Path(path).name.lower()
@@ -52,4 +52,4 @@ bundle=(notices/'THIRD-PARTY-NOTICES.txt').read_bytes();assert bundle==gzip.deco
 for required in [b'dispatch-0.2.0/DISTRIBUTOR-NOTICE.txt',b'Steven Sheldon',b'r-efi-5.3.0/AUTHORS',b'Adobe-XMP',b'LICENSE_FOXIT']:
  assert required in bundle,required
 report={'platform':system,'architecture':arch,'result':'PASS','scope':'Extracted native installer and portable archive match staged files; source artwork checks; approved external font input; forbidden loose payload files; exact notice archive. Does not establish legal chain of title or exhaustive binary decompilation.','files':inventory,'packages':{f.name:sha(f) for f in out.iterdir() if f.is_file() and f.suffix in ('.pkg','.zip','.exe','.deb','.gz')},'cli':str(binary)}
-(out/f'verification-{system}-{arch}.json').write_text(json.dumps(report,indent=2));print('PASS extracted installer verification')
+(out/f'verification-{system}-{arch}.json').write_text(json.dumps(report,indent=2), encoding='utf-8');print('PASS extracted installer verification')

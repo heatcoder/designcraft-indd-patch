@@ -1,6 +1,12 @@
 name: Build iRajeev installers
 on:
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: Build all platforms or retry Windows only
+        type: choice
+        default: all
+        options: [all, windows]
   push:
     tags: ['v*']
 permissions:
@@ -10,16 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - {os: macos-15-intel, name: macos-x86_64}
-          - {os: macos-15, name: macos-aarch64}
-          - {os: windows-2025, name: windows-x86_64}
-          - {os: windows-11-arm, name: windows-aarch64}
-          - {os: ubuntu-22.04, name: linux-x86_64}
-          - {os: ubuntu-22.04-arm, name: linux-aarch64}
+        include: ${{ fromJSON(inputs.platforms == 'windows' && '[{"os": "windows-2025", "name": "windows-x86_64"}, {"os": "windows-11-arm", "name": "windows-aarch64"}]' || '[{"os": "macos-15-intel", "name": "macos-x86_64"}, {"os": "macos-15", "name": "macos-aarch64"}, {"os": "windows-2025", "name": "windows-x86_64"}, {"os": "windows-11-arm", "name": "windows-aarch64"}, {"os": "ubuntu-22.04", "name": "linux-x86_64"}, {"os": "ubuntu-22.04-arm", "name": "linux-aarch64"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
+      PYTHONUTF8: '1'
       CARGO_PROFILE_RELEASE_OPT_LEVEL: '1'
       CARGO_PROFILE_RELEASE_LTO: 'false'
       CRAFT_FONTS_DIR: ${{ github.workspace }}/fonts

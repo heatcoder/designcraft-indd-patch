@@ -3,7 +3,7 @@
 from pathlib import Path
 import json, subprocess, sys
 ROOT = Path(__file__).resolve().parents[1]
-meta = json.loads((ROOT / 'upstream.json').read_text())
+meta = json.loads((ROOT / 'upstream.json').read_text(encoding='utf-8'))
 dest = Path(sys.argv[1]).resolve() if len(sys.argv)>1 else ROOT/'build/designcraft'
 if dest.exists():
     raise SystemExit(f'Refusing to overwrite existing source: {dest}')
