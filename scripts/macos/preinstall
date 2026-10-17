@@ -8,7 +8,7 @@ if /usr/bin/pgrep -x DesignCraft >/dev/null || /usr/bin/pgrep -x designcraft >/d
 fi
 apps="${volume%/}/Applications"
 backup="${volume%/}/Library/Application Support/Heatcoder/DesignCraft Backups"
-for path in "$apps" "${volume%/}/Library/Application Support" "${volume%/}/Library/Application Support/Heatcoder" "$backup" "$apps/DesignCraft.app"; do
+for path in "$apps" "${volume%/}/Library/Application Support" "${volume%/}/Library/Application Support/Heatcoder" "$backup" "$apps/DesignCraft.app" "$apps/MalayalamPatch" "$apps/MalayalamPatch/DesignCraft.app"; do
   if [ -L "$path" ]; then echo "Refusing symlink installation path: $path" >&2; exit 1; fi
 done
 if [ -e "$apps/DesignCraft.app" ]; then
@@ -20,4 +20,16 @@ if [ -e "$apps/DesignCraft.app" ]; then
   /usr/bin/diff -qr "$apps/DesignCraft.app" "$saved/DesignCraft.app" >/dev/null
   /bin/chmod 755 "$saved"
   echo "Previous DesignCraft saved at: $saved/DesignCraft.app"
+fi
+
+# Retire the earlier separate patch copy so only the canonical app is installed.
+legacy="$apps/MalayalamPatch/DesignCraft.app"
+if [ -e "$legacy" ]; then
+  [ -d "$legacy/Contents" ] || exit 1
+  /bin/mkdir -p "$backup"
+  retired=$(/usr/bin/mktemp -d "$backup/retired-$(/bin/date +%Y%m%d-%H%M%S)-XXXXXX")
+  /bin/mv "$legacy" "$retired/DesignCraft.app"
+  /bin/chmod 755 "$retired"
+  /bin/rmdir "$apps/MalayalamPatch" 2>/dev/null || true
+  echo "Earlier separate patch copy archived at: $retired/DesignCraft.app"
 fi

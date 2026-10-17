@@ -10,6 +10,8 @@ if system=='Darwin':
  app=Path('/Applications/DesignCraft.app'); assert not app.exists()
  run('sudo','mkdir','-p',app/'Contents/MacOS');run('sudo','cp','/usr/bin/true',app/'Contents/MacOS/DesignCraft')
  old=digest(app/'Contents/MacOS/DesignCraft')
+ legacy=Path('/Applications/MalayalamPatch/DesignCraft.app')
+ run('sudo','mkdir','-p',legacy/'Contents/MacOS');run('sudo','cp','/usr/bin/true',legacy/'Contents/MacOS/DesignCraft')
  run('sudo','installer','-pkg',next(out.glob('*.pkg')),'-target','/')
  backups=list(Path('/Library/Application Support/Heatcoder/DesignCraft Backups').glob('*/DesignCraft.app/Contents/MacOS/DesignCraft'))
  assert any(digest(p)==old for p in backups),'Old app backup missing'
@@ -17,6 +19,9 @@ if system=='Darwin':
  expected=next((root/'build').glob('package-Darwin-*/root/DesignCraft.app/Contents/MacOS/DesignCraft'))
  assert digest(app/'Contents/MacOS/DesignCraft')==digest(expected)
  assert not (app/'Contents/MacOS/old-only').exists()
+ assert not legacy.exists(),'Separate patch app still installed'
+ retired=list(Path('/Library/Application Support/Heatcoder/DesignCraft Backups').glob('retired-*/DesignCraft.app/Contents/MacOS/DesignCraft'))
+ assert any(digest(p)==old for p in retired),'Separate patch backup missing'
 elif system=='Linux':
  # A real same-name Debian package upgrade, not just extraction.
  fixture=root/'build/old-package';(fixture/'DEBIAN').mkdir(parents=True)
