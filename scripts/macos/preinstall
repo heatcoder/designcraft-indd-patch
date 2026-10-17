@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+# Installer supplies the target volume as argument 3.
+volume=${3:-/}
+if /usr/bin/pgrep -x DesignCraft >/dev/null || /usr/bin/pgrep -x designcraft >/dev/null; then
+  echo 'Quit all DesignCraft windows before installing this update.' >&2
+  exit 1
+fi
+apps="${volume%/}/Applications"
+backup="${volume%/}/Library/Application Support/Heatcoder/DesignCraft Backups"
+for path in "$apps" "${volume%/}/Library/Application Support" "${volume%/}/Library/Application Support/Heatcoder" "$backup" "$apps/DesignCraft.app"; do
+  if [ -L "$path" ]; then echo "Refusing symlink installation path: $path" >&2; exit 1; fi
+done
+if [ -e "$apps/DesignCraft.app" ]; then
+  [ -d "$apps/DesignCraft.app/Contents" ] || exit 1
+  /bin/mkdir -p "$backup"
+  /bin/chmod 755 "$backup"
+  saved=$(/usr/bin/mktemp -d "$backup/upgrade-$(/bin/date +%Y%m%d-%H%M%S)-XXXXXX")
+  /usr/bin/ditto "$apps/DesignCraft.app" "$saved/DesignCraft.app"
+  /usr/bin/diff -qr "$apps/DesignCraft.app" "$saved/DesignCraft.app" >/dev/null
+  /bin/chmod 755 "$saved"
+  echo "Previous DesignCraft saved at: $saved/DesignCraft.app"
+fi

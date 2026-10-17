@@ -1,0 +1,66 @@
+name: Verify replacement installers
+on:
+  push:
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/upgrade-installers.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  upgrade:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: macos-15-intel, name: macos-x86_64}
+          - {os: macos-15, name: macos-aarch64}
+          - {os: windows-2025, name: windows-x86_64}
+          - {os: windows-11-arm, name: windows-aarch64}
+          - {os: ubuntu-22.04, name: linux-x86_64}
+          - {os: ubuntu-22.04-arm, name: linux-aarch64}
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: '1'
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: '1'
+      CARGO_PROFILE_RELEASE_LTO: 'false'
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/fonts
+      CRAFT_FONTS_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Rust
+        shell: bash
+        run: rustup toolchain install 1.95.0 --profile minimal && rustup default 1.95.0
+      - name: Linux build libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxi-dev libxrandr-dev libxcursor-dev libxinerama-dev libxkbcommon-dev libwayland-dev libudev-dev libasound2-dev libvulkan-dev pkg-config
+      - name: Windows installer compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')) { choco install innosetup --yes --no-progress }
+      - name: Prepare pinned source for attribution and artwork checks
+        run: python scripts/prepare.py
+      - name: Build Heatcoder UI and CLI
+        working-directory: build/designcraft
+        run: cargo build --release --locked -p designcraft -p designcraft-cli
+      - name: Package replacement installer
+        run: python scripts/package.py --source build/designcraft --bin-dir build/designcraft/target/release
+      - name: Verify extracted payload and notices
+        run: python scripts/verify_package.py --source build/designcraft
+      - name: Test existing-installation replacement and backup
+        run: python scripts/test_upgrade.py
+      - name: Test extracted INDD and Malayalam functionality
+        shell: python
+        run: |
+          import json,pathlib,subprocess
+          r=json.loads(next(pathlib.Path('dist').glob('verification-*.json')).read_text())
+          subprocess.run(['python','scripts/smoke_packaged.py','--cli',r['cli'],'--work','build/smoke'],check=True)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: heatcoder-upgrade-${{ matrix.name }}
+          path: dist/*

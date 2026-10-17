@@ -1,11 +1,11 @@
 'use strict';
 const releaseApproved=false; // Distribution audit is still open.
-const releaseTag='v0.8.0-irajeev.4';
+const releaseTag='v0.8.0-heatcoder.5';
 const repo='heatcoder/designcraft-indd-patch';
 const osInput=document.querySelector('#os'),archInput=document.querySelector('#arch');
 const button=document.querySelector('#download'),status=document.querySelector('#status'),cancel=document.querySelector('#cancel');
 let assets=[],timer=null,current=null,manual=false,releaseError=false;
-const instructions={macos:'Install the .pkg, then open Applications → MalayalamPatch → DesignCraft.',windows:'Install the .exe, then open DesignCraft from the Start menu.',linux:'On Debian or Ubuntu, install the .deb and open DesignCraft. For other Linux systems, see the release notes.'};
+const instructions={macos:'Install the .pkg, then open Applications → DesignCraft.',windows:'Install the .exe, then open DesignCraft from the Start menu.',linux:'On Debian or Ubuntu, install the .deb and open DesignCraft. For other Linux systems, see the release notes.'};
 const labels={macos:'macOS',windows:'Windows',linux:'Linux'};
 function stopAuto(){if(timer!==null)clearInterval(timer);timer=null;cancel.hidden=true;}
 function assetFor(os,arch){const suffix={macos:'.pkg',windows:'.exe',linux:'.deb'}[os];return assets.find(a=>a.name.includes(`-${os}-${arch}.`)&&a.name.endsWith(suffix));}

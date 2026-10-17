@@ -25,7 +25,8 @@ assert 'Join the ArtCraft community' not in chrome and 'Independent DesignCraft 
 fonts={f.name:sha(f) for f in (root/'fonts').rglob('*') if f.suffix.lower() in ('.ttf','.otf','.ttc')}
 assert list(fonts.values())==['312e0e7c3cc15fa09eb42a8f749eeb246b593ed420e3c81aafe8d910c3a6fb56'],fonts
 if system=='Darwin':
- expected=stage/'root/MalayalamPatch/DesignCraft.app';pkg=next(out.glob('*macos-*.pkg'));expanded=review/'pkg';run('pkgutil','--expand-full',pkg,expanded)
+ expected=stage/'root/DesignCraft.app';pkg=next(out.glob('*macos-*.pkg'));expanded=review/'pkg';run('pkgutil','--expand-full',pkg,expanded)
+ hooks=list(expanded.rglob('preinstall'));assert len(hooks)==1 and hooks[0].read_bytes()==(root/'scripts/macos/preinstall').read_bytes(),'Installer upgrade guard missing'
  apps=list(expanded.rglob('DesignCraft.app'));assert len(apps)==1;inventory=compare(expected,apps[0]);binary=apps[0]/'Contents/MacOS/designcraft-cli';notices=apps[0]/'Contents/Resources/Notices'
  run('codesign','--verify','--deep','--strict',apps[0]);run('otool','-L',binary)
  z=review/'zip';run('ditto','-x','-k',next(out.glob('*macos-*.zip')),z);compare(expected,z/'DesignCraft.app')
@@ -33,8 +34,8 @@ elif system=='Linux':
  expected=stage/'root';expanded=review/'deb';run('dpkg-deb','-x',next(out.glob('*.deb')),expanded)
  # DEBIAN is package metadata, not installed payload.
  e=files(expected);e={k:v for k,v in e.items() if not k.startswith('DEBIAN/')};inventory=files(expanded);assert inventory==e,'DEB payload differs'
- binary=expanded/'opt/irajeev-designcraft/designcraft-cli';notices=expanded/'opt/irajeev-designcraft/Notices';run('ldd',binary)
- portable=review/'portable';portable.mkdir();run('tar','-xzf',next(out.glob('*.tar.gz')),'-C',portable);compare(expected/'opt/irajeev-designcraft',portable)
+ binary=expanded/'usr/lib/heatcoder-designcraft/designcraft-cli';notices=expanded/'usr/lib/heatcoder-designcraft/Notices';run('ldd',binary)
+ portable=review/'portable';portable.mkdir();run('tar','-xzf',next(out.glob('*.tar.gz')),'-C',portable);compare(expected/'usr/lib/heatcoder-designcraft',portable)
 else:
  expected=stage/'payload';expanded=review/'installed';installer=next(out.glob('*.exe'))
  run(installer,'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',f'/DIR={expanded}',f'/LOG={review / "install.log"}')

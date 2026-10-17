@@ -40,7 +40,7 @@ if system=='Darwin':
         info=subprocess.check_output(['lipo','-archs',str(bins/name)],text=True).strip()
         expected='arm64' if arch=='aarch64' else 'x86_64'
         if info!=expected: raise SystemExit(f'Architecture mismatch: {name}: {info}, expected {expected}')
-    app=work/'root/MalayalamPatch/DesignCraft.app'; contents=app/'Contents'
+    app=work/'root/DesignCraft.app'; contents=app/'Contents'
     copy(bins/'designcraft',contents/'MacOS/DesignCraft')
     copy(bins/'designcraft-cli',contents/'MacOS/designcraft-cli')
     icon=source/'assets/app-icon/DesignCraft.icns'
@@ -49,30 +49,32 @@ if system=='Darwin':
     if icon: copy(icon,contents/'Resources/DesignCraft.icns')
     notices(contents/'Resources/Notices')
     info={'CFBundleExecutable':'DesignCraft','CFBundleIdentifier':'com.irajeev.designcraft.indd','CFBundleName':'DesignCraft',
-          'CFBundleDisplayName':'DesignCraft','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.8.0','CFBundleVersion':'0.8.4',
-          'IRajeevPatchVersion':VERSION,'LSMinimumSystemVersion':'11.0','NSHighResolutionCapable':True,'CFBundleIconFile':'DesignCraft',
+          'CFBundleDisplayName':'DesignCraft','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.8.0','CFBundleVersion':'0.8.5',
+          'HeatcoderPatchVersion':VERSION,'LSMinimumSystemVersion':'11.0','NSHighResolutionCapable':True,'CFBundleIconFile':'DesignCraft',
           'NSHumanReadableCopyright':'DesignCraft authors. INDD patch distribution: Heatcoder.',
           'CFBundleDocumentTypes':[{'CFBundleTypeName':'DesignCraft and InDesign documents','CFBundleTypeRole':'Editor','LSHandlerRank':'Alternate','CFBundleTypeExtensions':['designcraft','idml','indd','indt']}]}
     (contents/'Info.plist').write_bytes(plistlib.dumps(info))
     run('codesign','--force','--deep','--sign','-','--timestamp=none',app)
     run('codesign','--verify','--deep','--strict',app)
     component=work/'payload.pkg'
-    # Disable bundle relocation: updates stay in the dedicated Applications folder.
+    # Disable bundle relocation: updates replace /Applications/DesignCraft.app.
     cp=work/'components.plist'
     run('pkgbuild','--analyze','--root',work/'root',cp)
     components=plistlib.loads(cp.read_bytes())
-    for item in components: item['BundleIsRelocatable']=False
+    for item in components:
+        item['BundleIsRelocatable']=False
+        item['BundleOverwriteAction']='upgrade'
     cp.write_bytes(plistlib.dumps(components))
-    run('pkgbuild','--root',work/'root','--component-plist',cp,'--identifier','com.irajeev.designcraft.indd','--version','0.8.4','--install-location','/Applications',component)
+    run('pkgbuild','--root',work/'root','--component-plist',cp,'--identifier','com.irajeev.designcraft.indd','--version','0.8.5','--install-location','/Applications','--scripts',ROOT/'scripts/macos',component)
     resources=work/'resources';resources.mkdir()
-    (resources/'welcome.html').write_text('''<html><body style="font-family:Helvetica;color:#273d37;background:#faf7f2;padding:20px"><h1 style="font-family:Georgia;font-size:44px;font-weight:normal">irajeev.com</h1><h2>DesignCraft · INDD opening</h2><p>Published by Heatcoder.</p><p>Install DesignCraft alongside your existing app.</p><p>Open InDesign documents directly from File → Open. Save edits as DesignCraft or IDML.</p><p>This independent experimental build uses the DesignCraft and indd-utils open-source projects. Layout, fonts and linked images require review.</p></body></html>''', encoding='utf-8')
-    (resources/'conclusion.html').write_text('''<html><body style="font-family:Helvetica;padding:20px"><h1>Ready to open INDD</h1><p>Open <b>Applications → MalayalamPatch → DesignCraft</b>, then choose File → Open.</p><p>Your original DesignCraft installation is still available. Keep your original INDD documents and check imported layouts before production use.</p><p>irajeev.com</p></body></html>''', encoding='utf-8')
+    (resources/'welcome.html').write_text('''<html><body style="font-family:Helvetica;color:#273d37;background:#faf7f2;padding:20px"><h1 style="font-family:Georgia;font-size:44px;font-weight:normal">Heatcoder</h1><h2>DesignCraft · INDD opening</h2><p>Published by Heatcoder.</p><p>Update DesignCraft in Applications. Close DesignCraft first. Your previous app is backed up under /Library/Application Support/Heatcoder/DesignCraft Backups. Documents and settings are preserved.</p><p>Open InDesign documents directly from File → Open. Save edits as DesignCraft or IDML.</p><p>This independent experimental build uses the DesignCraft and indd-utils open-source projects. Layout, fonts and linked images require review.</p></body></html>''', encoding='utf-8')
+    (resources/'conclusion.html').write_text('''<html><body style="font-family:Helvetica;padding:20px"><h1>Ready to open INDD</h1><p>Open <b>Applications → DesignCraft</b>, then choose File → Open.</p><p>Your previous app is saved in /Library/Application Support/Heatcoder/DesignCraft Backups. Keep your original INDD documents and check imported layouts before production use.</p><p>Heatcoder</p></body></html>''', encoding='utf-8')
     copy(ROOT/'NOTICE.md',resources/'notice.txt')
     dist=work/'Distribution.xml'
     host='arm64' if arch=='aarch64' else 'x86_64'
-    dist.write_text(f'''<?xml version="1.0"?><installer-gui-script minSpecVersion="2"><title>Heatcoder — DesignCraft INDD Patch</title><welcome file="welcome.html" mime-type="text/html"/><conclusion file="conclusion.html" mime-type="text/html"/><license file="notice.txt"/><options customize="never" require-scripts="false" hostArchitectures="{host}"/><domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false"/><choices-outline><line choice="main"/></choices-outline><choice id="main" visible="false" title="DesignCraft"><pkg-ref id="com.irajeev.designcraft.indd"/></choice><pkg-ref id="com.irajeev.designcraft.indd" version="0.8.4" onConclusion="none">payload.pkg</pkg-ref></installer-gui-script>''', encoding='utf-8')
-    run('productbuild','--distribution',dist,'--resources',resources,'--package-path',work,out/f'irajeev-designcraft-indd-{VERSION}-macos-{arch}.pkg')
-    run('ditto','-c','-k','--sequesterRsrc','--keepParent',app,out/f'irajeev-designcraft-indd-{VERSION}-macos-{arch}.zip')
+    dist.write_text(f'''<?xml version="1.0"?><installer-gui-script minSpecVersion="2"><title>Heatcoder — DesignCraft INDD Patch</title><welcome file="welcome.html" mime-type="text/html"/><conclusion file="conclusion.html" mime-type="text/html"/><license file="notice.txt"/><options customize="never" require-scripts="true" hostArchitectures="{host}"/><domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false"/><choices-outline><line choice="main"/></choices-outline><choice id="main" visible="false" title="DesignCraft"><pkg-ref id="com.irajeev.designcraft.indd"/></choice><pkg-ref id="com.irajeev.designcraft.indd" version="0.8.5" onConclusion="none">payload.pkg</pkg-ref></installer-gui-script>''', encoding='utf-8')
+    run('productbuild','--distribution',dist,'--resources',resources,'--package-path',work,out/f'heatcoder-designcraft-indd-{VERSION}-macos-{arch}.pkg')
+    run('ditto','-c','-k','--sequesterRsrc','--keepParent',app,out/f'heatcoder-designcraft-indd-{VERSION}-macos-{arch}.zip')
 elif system=='Windows':
     stage=work/'payload'; stage.mkdir()
     for name in ['designcraft.exe','designcraft-cli.exe']: copy(bins/name,stage/name)
@@ -90,17 +92,20 @@ elif system=='Windows':
 elif system=='Linux':
     debarch={'x86_64':'amd64','aarch64':'arm64'}.get(arch)
     if not debarch: raise SystemExit(f'Unsupported package architecture {arch}')
-    stage=work/'root'; app=stage/'opt/irajeev-designcraft'
+    stage=work/'root'; app=stage/'usr/lib/heatcoder-designcraft'
     for name in ['designcraft','designcraft-cli']: copy(bins/name,app/name)
     notices(app/'Notices')
-    copy(ROOT/'branding/icon.png',stage/'usr/share/icons/hicolor/256x256/apps/irajeev-designcraft.png')
-    desktop=stage/'usr/share/applications/irajeev-designcraft.desktop';desktop.parent.mkdir(parents=True)
-    desktop.write_text('[Desktop Entry]\nType=Application\nName=DesignCraft\nComment=Direct INDD opening — Heatcoder\nExec=/opt/irajeev-designcraft/designcraft %F\nIcon=irajeev-designcraft\nTerminal=false\nCategories=Graphics;Publishing;\nMimeType=application/x-indesign;application/vnd.adobe.indesign-idml-package;\n', encoding='utf-8')
-    control=stage/'DEBIAN/control';control.parent.mkdir()
-    control.write_text(f'Package: irajeev-designcraft-indd\nVersion: 0.8.0-4\nArchitecture: {debarch}\nMaintainer: Heatcoder\nHomepage: https://irajeev.com\nDepends: libc6, libgcc-s1, libstdc++6, libx11-6, libxkbcommon0, libwayland-client0, libvulkan1\nDescription: DesignCraft with direct INDD import\n Independent side-by-side build distributed by Heatcoder.\n', encoding='utf-8')
-    run('dpkg-deb','--root-owner-group','--build',stage,out/f'irajeev-designcraft-indd-{VERSION}-linux-{arch}.deb')
+    for name in ['designcraft','designcraft-cli']:
+        copy(bins/name,stage/'usr/bin'/name)
+    copy(ROOT/'scripts/linux/preinst',stage/'DEBIAN/preinst')
+    copy(ROOT/'branding/icon.png',stage/'usr/share/icons/hicolor/256x256/apps/heatcoder-designcraft.png')
+    desktop=stage/'usr/share/applications/ai.storyteller.designcraft.desktop';desktop.parent.mkdir(parents=True)
+    desktop.write_text('[Desktop Entry]\nType=Application\nName=DesignCraft\nComment=Direct INDD opening — Heatcoder\nExec=/usr/bin/designcraft %F\nIcon=heatcoder-designcraft\nTerminal=false\nCategories=Graphics;Publishing;\nMimeType=application/x-indesign;application/vnd.adobe.indesign-idml-package;\n', encoding='utf-8')
+    control=stage/'DEBIAN/control';control.parent.mkdir(exist_ok=True)
+    control.write_text(f'Package: designcraft\nVersion: 0.8.0-5\nProvides: irajeev-designcraft-indd\nReplaces: irajeev-designcraft-indd\nConflicts: irajeev-designcraft-indd\nArchitecture: {debarch}\nMaintainer: Heatcoder\nHomepage: https://irajeev.com\nDepends: libc6, libgcc-s1, libstdc++6, libx11-6, libxkbcommon0, libwayland-client0, libvulkan1, procps\nDescription: DesignCraft with direct INDD import\n DesignCraft upgrade distributed by Heatcoder.\n', encoding='utf-8')
+    run('dpkg-deb','--root-owner-group','--build',stage,out/f'heatcoder-designcraft-indd-{VERSION}-linux-{arch}.deb')
     # Also provide a portable archive for other Linux distributions. No installer is claimed.
-    run('tar','-C',app,'-czf',out/f'irajeev-designcraft-indd-{VERSION}-linux-{arch}.tar.gz','.')
+    run('tar','-C',app,'-czf',out/f'heatcoder-designcraft-indd-{VERSION}-linux-{arch}.tar.gz','.')
 else: raise SystemExit(f'No installer implementation for {system}')
 files=[f for f in out.iterdir() if f.is_file() and f.suffix in ['.pkg','.zip','.exe','.deb','.gz']]
 (out/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(f.read_bytes()).hexdigest()+'  '+f.name+'\n' for f in sorted(files)), encoding='utf-8')

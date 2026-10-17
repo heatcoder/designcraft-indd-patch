@@ -59,7 +59,7 @@ index c60a0410..84e8f56d 100644
  
  ## Progress log
  
-+- **2026-10-17 · independent iRajeev backport** · Direct INDD/INDT opening and embedded graphic previews, plus display-only compatibility for missing separators and quotation marks in legacy FML Malayalam fonts. Original text and encoded conjuncts are preserved. This experimental distribution does not change upstream readiness estimates.
++- **2026-10-17 · independent Heatcoder backport** · Direct INDD/INDT opening and embedded graphic previews, plus display-only compatibility for missing separators and quotation marks in legacy FML Malayalam fonts. Original text and encoded conjuncts are preserved. This experimental distribution does not change upstream readiness estimates.
 +
  Newest first.
  
@@ -69,8 +69,8 @@ index c60a0410..84e8f56d 100644
  | 2026-10-04 | major | Parity estimate: breadth 99%, depth ~83%, ~170 h |
  | 2026-10-01 | major | First roadmap: status, milestones |
 +
-+- Independent iRajeev distribution: Type → MalayalamPatch offers offline Manglish/InScript preview and Unicode insertion, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
-+- iRajeev macOS build: exit after synchronous recovery/settings preservation to avoid AppKit Touch Bar observer teardown crash.
++- Independent Heatcoder distribution: Type → MalayalamPatch offers offline Manglish/InScript preview and Unicode insertion, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
++- Heatcoder macOS build: exit after synchronous recovery/settings preservation to avoid AppKit Touch Bar observer teardown crash.
 diff --git a/apps/designcraft-web/src/web.rs b/apps/designcraft-web/src/web.rs
 index fe7cca4a..1ba0617a 100644
 --- a/apps/designcraft-web/src/web.rs
@@ -1203,7 +1203,7 @@ index 00000000..26b7d8cc
 +    }
 +    let mut open = true;
 +    let mut mode = app.malayalam.mode.clone();
-+    egui::Window::new("Malayalam (irajeev)")
++    egui::Window::new("Malayalam (Heatcoder)")
 +        .id(egui::Id::new("malayalam_direct_input"))
 +        .open(&mut open)
 +        .resizable(false)
@@ -1328,7 +1328,7 @@ index dc8b88bf..59403708 100644
      ("app.exportHtml", "Export HTML…", None, "{path?} — one self-contained web page"),
      ("app.exportXml", "Export XML…", None, "{path?} — the tagged content"),
      ("app.printBooklet", "Print Booklet…", None, "{path?} — saddle-stitched printer spreads as PDF"),
-+    ("app.malayalam", "Malayalam (irajeev)", None, "{mode?: off|manglish|inscript} — direct typing on the page"),
++    ("app.malayalam", "Malayalam (Heatcoder)", None, "{mode?: off|manglish|inscript} — direct typing on the page"),
      ("app.qrCode", "Generate QR Code…", None, "{} — the QR Code dialog (object.qrCode does the work)"),
      ("app.userDictionary", "User Dictionary…", None, "{} — hyphenation exceptions (hyphenation.* commands)"),
      ("app.fittingOptions", "Frame Fitting Options…", None, "{} — the dialog for object.fittingOptions"),
@@ -1410,7 +1410,7 @@ index 06f59de9..4c8ebbca 100644
 -**Dimension score: ~40% ready (estimated), 150–250 h + 20–60 h for INDD integration.** The
 -single largest gap is that `.indd` can't be opened.
 +**Upstream baseline estimate: ~40% ready, 150–250 h + 20–60 h for INDD integration.**
-+The independent iRajeev backport adds experimental direct `.indd`/`.indt` opening through
++The independent Heatcoder backport adds experimental direct `.indd`/`.indt` opening through
 +the pinned indd-utils converter; the upstream readiness estimates above have not been reassessed.
 +Legacy FML font display resolves unsupported nonbreaking separators and curly quotes to the
 +font's own punctuation slots, without rewriting story text or changing encoded Malayalam conjuncts.
@@ -1424,7 +1424,7 @@ index 06f59de9..4c8ebbca 100644
  |---|---|---|---|---|---|---|
 -| InDesign document | `.indd` | read/write (native) | ✗ (#21; converters proposed in #98, #114) | ✗ | — | 30% |
 -| InDesign template | `.indt` | read/write | ✗ | ✗ | — | 2% |
-+| InDesign document | `.indd` | read/write (native) | ~ (iRajeev backport, indd-utils) | ✗ | Synthetic routing and font compatibility regressions; local real-file review | 30% |
++| InDesign document | `.indd` | read/write (native) | ~ (Heatcoder backport, indd-utils) | ✗ | Synthetic routing and font compatibility regressions; local real-file review | 30% |
 +| InDesign template | `.indt` | read/write | ~ (same converter) | ✗ | Case-insensitive routing regression | 2% |
  | InDesign Markup | `.idml` | read/write | ✓ | ✓ | Synthetic fixtures in `crates/idml/src/tests.rs` (49 tests); exported files verified by opening in InDesign 2026 by hand; indd-utils' 98-document run imports 811 spreads / 2,866 stories / 5,812 items. Open: #193, #338, #339, #340, #211. No real-file corpus test | 20% |
  | DesignCraft native | `.designcraft` | — | ✓ | ✓ | zip + JSON, versioned; round-trip tests. Asset loading and compaction index by content hash, then confirm byte equality; equal-sized distinct files no longer all share one search bucket (#727). Separate links, MIME types and PDF pages retain their identity | — |

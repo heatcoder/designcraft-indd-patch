@@ -1,10 +1,10 @@
 # MalayalamPatch by Heatcoder
 
-A free enhancement for DesignCraft, adding INDD opening and Malayalam typing. Published by **iRajeev**, built on open-source projects; credits and licences are included.
+A free enhancement for DesignCraft, adding INDD opening and Malayalam typing. Published by **Heatcoder**, built on open-source projects; credits and licences are included.
 
 **Downloads are temporarily paused while release checks are completed.** See [release notes](site/indd/release-notes.html) and the [technical audit](audit/AUDIT.md) for details.
 
-This is a patched application build, not an Adobe plugin. It installs as **DesignCraft** alongside the official app. Open `.indd` or `.indt` with **File → Open**, drag and drop, or the command line. Conversion happens locally and in memory. Save edits as `.designcraft` or export `.idml`; INDD writing is not supported.
+This is a patched application build, not an Adobe plugin. The installers update the existing **DesignCraft** app and back up replaced files. Close DesignCraft before installing. Open `.indd` or `.indt` with **File → Open**, drag and drop, or the command line. Conversion happens locally and in memory. Save edits as `.designcraft` or export `.idml`; INDD writing is not supported.
 
 ## Status
 
@@ -16,9 +16,9 @@ The patch resolves unsupported nonbreaking separators (U+2011) and curly quotati
 
 The matching licensed FML fonts must already be installed or provided in the document’s `Document Fonts` folder. This is not a legacy-to-Unicode conversion, a font replacement, or a guarantee of identical text flow.
 
-## MalayalamPatch (irajeev)
+## MalayalamPatch (Heatcoder)
 
-Open **Window → Malayalam (irajeev)** and choose **Manglish** or **InScript**. Select the Type tool (T), click in a text frame and type directly on the page using an English keyboard. Selected text is replaced. Space commits a Manglish word; Backspace revises the active word. Moving the cursor, changing modes or using Undo ends that composition. Choose Off or close the panel to return to normal typing. Paste is not transliterated.
+Open **Window → Malayalam (Heatcoder)** and choose **Manglish** or **InScript**. Select the Type tool (T), click in a text frame and type directly on the page using an English keyboard. Selected text is replaced. Space commits a Manglish word; Backspace revises the active word. Moving the cursor, changing modes or using Undo ends that composition. Choose Off or close the panel to return to normal typing. Paste is not transliterated.
 
 Manglish uses deterministic, case-sensitive spelling: `namaskaaram` → നമസ്കാരം, `malayaaLam` → മലയാളം, `uNTu` → ഉണ്ടു. Use `T D N L R` for retroflex letters; `aa ee oo` for long vowels. It is not predictive transliteration. InScript uses the standard Malayalam keyboard positions; `vcmdkejx` produces നമസ്കാരം. Noto Sans Malayalam is bundled for new Unicode text. Existing legacy FML text is not converted. Typeit! is not required and its source is not included.
 
@@ -28,7 +28,7 @@ The macOS build also exits after preserving recovery data and settings to avoid 
 
 Download the matching file from [Releases](https://github.com/heatcoder/designcraft-indd-patch/releases).
 
-- **macOS:** open the `.pkg` for Intel or Apple Silicon. Launch **Applications → MalayalamPatch → DesignCraft**. A `.zip` application is also provided.
+- **macOS:** open the `.pkg` for Intel or Apple Silicon. Launch **Applications → DesignCraft**. A `.zip` application is also provided.
 - **Windows:** open the `.exe` for Intel/AMD x64 or ARM64. Launch **DesignCraft** from Start.
 - **Linux (Debian/Ubuntu):** open the `.deb` using your software installer. A portable `.tar.gz` is provided for other distributions, where required system libraries must already be installed.
 
@@ -60,7 +60,7 @@ On Windows use `python` instead of `python3`, and set `CRAFT_FONTS_DIR` to the a
 
 ## Automated installers
 
-Run **Actions → Build iRajeev installers → Run workflow**. The workflow builds separate macOS Intel/Apple Silicon, Windows x64/ARM64 and Linux x64/ARM64 installers. Artifacts are uploaded per platform. A `v*` tag builds all platforms and publishes a prerelease only if every build and its import regression tests succeed. No account secrets or signing certificates are bundled.
+Run **Actions → Build Heatcoder installers → Run workflow**. The workflow builds separate macOS Intel/Apple Silicon, Windows x64/ARM64 and Linux x64/ARM64 installers. Artifacts are uploaded per platform. A `v*` tag builds all platforms and publishes a prerelease only if every build and its import regression tests succeed. No account secrets or signing certificates are bundled.
 
 ## Website
 
@@ -73,3 +73,9 @@ The page detects desktop OS and, where the browser exposes it, processor archite
 The importer was developed upstream by aiongg; embedded-preview support by Govinda Roy. This project packages/backports their work rather than claiming authorship of the INDD parser. See [NOTICE.md](NOTICE.md), the MIT and Apache licences, and the exact commits in `upstream.json`.
 
 Not affiliated with Adobe or an official ArtCraft release. User documents and private test outputs must never be committed.
+
+## Updating an existing installation
+
+Mac PKG updates `/Applications/DesignCraft.app` and saves the previous bundle under `/Library/Application Support/Heatcoder/DesignCraft Backups`. Windows EXE detects the registered app path (or uses Program Files/DesignCraft), backs up the app under ProgramData/Heatcoder/DesignCraft Backups, and migrates the original MSI registration where present. Debian/Ubuntu DEB upgrades the `designcraft` package and backs up replaced app files under `/var/backups/heatcoder-designcraft`. Documents and user settings are not selected for replacement.
+
+ZIP and tar.gz files are portable archives, not installers; they cannot automatically replace arbitrary portable apps, AppImages or Flatpak installations. Use the native installer for automatic upgrading. Previous separate MalayalamPatch copies are not automatically deleted.

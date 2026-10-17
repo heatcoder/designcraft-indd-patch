@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+if pgrep -x designcraft >/dev/null; then
+  echo 'Close DesignCraft before installing this update.' >&2
+  exit 1
+fi
+base=/var/backups/heatcoder-designcraft
+for path in /var/backups "$base"; do
+  if [ -L "$path" ]; then echo "Refusing symlink backup path: $path" >&2; exit 1; fi
+done
+mkdir -p "$base"
+saved=$(mktemp -d "$base/upgrade-$(date +%Y%m%d-%H%M%S)-XXXXXX")
+chmod 755 "$saved"
+for path in /usr/bin/designcraft /usr/bin/designcraft-cli /usr/share/doc/designcraft /usr/share/applications/ai.storyteller.designcraft.desktop /opt/irajeev-designcraft; do
+  if [ -e "$path" ]; then
+    mkdir -p "$saved$(dirname "$path")"
+    cp -a "$path" "$saved$path"
+  fi
+done
+printf 'Previous DesignCraft files saved at %s\n' "$saved"
