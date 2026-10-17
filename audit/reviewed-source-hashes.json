@@ -1,0 +1,6 @@
+{
+  "patches/designcraft-0.8.0-indd.patch": "729fea872768790b517acecf995a3ca97098829d884bfca5c1293c8bbe20d6da",
+  "scripts/customize.py": "5237e8f33dbadf5189a38ca1d6916c24e93c65bbf619167b4923cb4e20ab24fd",
+  "scripts/package.py": "63d5888ed0d677f99493b0f0e6414ba1a1a4709ce058a73edfa01181130050d1",
+  "upstream.json": "95082839b10e458f353682489464bf36ffc9a9a848be3825f9f6dca96a695396"
+}

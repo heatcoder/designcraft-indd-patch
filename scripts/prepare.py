@@ -13,4 +13,6 @@ subprocess.run(['git','checkout','--detach',meta['revision']],cwd=dest,check=Tru
 patch = ROOT/'patches/designcraft-0.8.0-indd.patch'
 subprocess.run(['git','apply','--check',str(patch)],cwd=dest,check=True)
 subprocess.run(['git','apply',str(patch)],cwd=dest,check=True)
+from customize import customize
+customize(dest)
 print(f'Prepared {dest}')

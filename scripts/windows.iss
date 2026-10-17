@@ -3,12 +3,12 @@
 #endif
 [Setup]
 AppId=irajeev.designcraft.indd
-AppName=DesignCraft iRajeev
+AppName=DesignCraft
 AppVersion={#Version}
 AppPublisher=irajeev.com
 AppPublisherURL=https://irajeev.com
-DefaultDirName={autopf}\DesignCraft iRajeev
-DefaultGroupName=DesignCraft iRajeev
+DefaultDirName={autopf}\MalayalamPatch\DesignCraft
+DefaultGroupName=MalayalamPatch
 OutputDir={#OutputDir}
 OutputBaseFilename=irajeev-designcraft-indd-{#Version}-windows-{#Arch}
 WizardStyle=modern
@@ -30,8 +30,8 @@ ArchitecturesInstallIn64BitMode=x64compatible
 [Files]
 Source: "{#BinDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 [Icons]
-Name: "{group}\DesignCraft iRajeev"; Filename: "{app}\designcraft.exe"
+Name: "{group}\DesignCraft"; Filename: "{app}\designcraft.exe"
 [Registry]
 Root: HKLM; Subkey: "Software\Classes\Applications\designcraft.exe\SupportedTypes"; ValueType: string; ValueName: ".indd"; ValueData: ""; Flags: uninsdeletevalue
 [Run]
-Filename: "{app}\designcraft.exe"; Description: "Open DesignCraft iRajeev"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\designcraft.exe"; Description: "Open DesignCraft"; Flags: nowait postinstall skipifsilent

@@ -10,7 +10,10 @@
   "patch_version": "0.8.0-irajeev.1",
   "website": "https://irajeev.com",
   "local_changes": [
-    "Display-only legacy FML separator and quotation-mark compatibility; original text and encoded conjuncts preserved"
+    "Display-only legacy FML separator and quotation-mark compatibility; original encoded text preserved",
+    "Window → Malayalam (irajeev): direct Manglish and InScript typing, composition guards and bundled Noto Sans Malayalam",
+    "Remove rendered restricted ArtCraft mark; app label is DesignCraft; include distribution audit and collected notices"
   ],
-  "malayalam_input": "Independent offline Manglish and InScript input with bundled OFL Noto Sans Malayalam"
+  "malayalam_input": "Independent offline Manglish and InScript input with bundled OFL Noto Sans Malayalam",
+  "public_release_status": "held pending distribution review"
 }

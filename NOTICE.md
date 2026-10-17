@@ -11,3 +11,7 @@ The independent distribution also adds display-only compatibility for unsupporte
 MalayalamPatch (irajeev) is an independently implemented offline Manglish and InScript input option. No Typeit! source is included. InScript key positions follow Microsoft's published Malayalam keyboard layout: https://learn.microsoft.com/en-us/globalization/keyboards/kbdinmal.html
 
 Noto Sans Malayalam is bundled under SIL OFL 1.1, Copyright 2022 The Noto Project Authors. See OFL-NotoSansMalayalam.txt and Malayalam-font-source.md in installed notices, or fonts/ in the source repository.
+
+The modified build removes the restricted ArtCraft mark and uses a neutral text identifier. It retains plain upstream attribution.
+
+Additional Adobe-origin open-source material includes Source fonts (OFL), PDF CMap resources (BSD-style terms), and the XMP Toolkit reference acknowledged by indd-utils (BSD 3-Clause; upstream says no source copied). See audit/AUDIT.md and the collected third-party notices. Public distribution remains on hold pending the documented review items.

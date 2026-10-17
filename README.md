@@ -1,12 +1,16 @@
+# Distribution review in progress
+
+Public installer release is paused. See `audit/AUDIT.md`, the complete dependency inventory and collected notices. Build artifacts are review candidates, not cleared releases.
+
 # DesignCraft INDD import patch
 
 An independent backport of direct INDD/INDT opening to **DesignCraft 0.8.0**. Installer and download-page branding: **irajeev.com**.
 
-This is a patched application build, not an Adobe plugin. It installs as **DesignCraft iRajeev** alongside the official app. Open `.indd` or `.indt` with **File → Open**, drag and drop, or the command line. Conversion happens locally and in memory. Save edits as `.designcraft` or export `.idml`; INDD writing is not supported.
+This is a patched application build, not an Adobe plugin. It installs as **DesignCraft** alongside the official app. Open `.indd` or `.indt` with **File → Open**, drag and drop, or the command line. Conversion happens locally and in memory. Save edits as `.designcraft` or export `.idml`; INDD writing is not supported.
 
 ## Status
 
-Experimental. Install only artifacts attached to a successful build/release. The native workflow checks INDD import, image previews, FML mappings, bundled Malayalam shaping, typing/Undo and quit recovery before packaging. These targeted automated checks are not exhaustive application testing or a guarantee of identical layouts. Interactive verification was performed on an Intel Mac; no Windows or Linux desktop UI verification is claimed. The download page only offers assets that actually exist in the release.
+Experimental. Install only artifacts attached to a successful build/release. The native workflow checks INDD import, image previews, FML mappings, bundled Malayalam shaping, typing/Undo and quit recovery before packaging. These targeted automated checks are not exhaustive application testing or a guarantee of identical layouts. Interactive verification was performed on an Intel Mac; no Windows or Linux desktop UI verification is claimed. The download page is paused for the distribution audit, even if a release asset exists.
 
 ## Malayalam FML display compatibility
 
@@ -16,7 +20,7 @@ The matching licensed FML fonts must already be installed or provided in the doc
 
 ## MalayalamPatch (irajeev)
 
-Place the Type tool cursor inside a text frame, then open **Type → MalayalamPatch (irajeev)…**. Choose **Manglish** or **InScript**, type in the input box, review the live preview and click **Insert Malayalam** (Ctrl/Cmd+Enter). Enter adds a line. One Undo removes the insertion. Selected text is replaced; surrounding formatting is preserved.
+Open **Window → Malayalam (irajeev)** and choose **Manglish** or **InScript**. Select the Type tool (T), click in a text frame and type directly on the page using an English keyboard. Selected text is replaced. Space commits a Manglish word; Backspace revises the active word. Moving the cursor, changing modes or using Undo ends that composition. Choose Off or close the panel to return to normal typing. Paste is not transliterated.
 
 Manglish uses deterministic, case-sensitive spelling: `namaskaaram` → നമസ്കാരം, `malayaaLam` → മലയാളം, `uNTu` → ഉണ്ടു. Use `T D N L R` for retroflex letters; `aa ee oo` for long vowels. It is not predictive transliteration. InScript uses the standard Malayalam keyboard positions; `vcmdkejx` produces നമസ്കാരം. Noto Sans Malayalam is bundled for new Unicode text. Existing legacy FML text is not converted. Typeit! is not required and its source is not included.
 
@@ -26,8 +30,8 @@ The macOS build also exits after preserving recovery data and settings to avoid 
 
 Download the matching file from [Releases](https://github.com/heatcoder/designcraft-indd-patch/releases).
 
-- **macOS:** open the `.pkg` for Intel or Apple Silicon. Launch **Applications → DesignCraft iRajeev**. A `.zip` application is also provided.
-- **Windows:** open the `.exe` for Intel/AMD x64 or ARM64. Launch **DesignCraft iRajeev** from Start.
+- **macOS:** open the `.pkg` for Intel or Apple Silicon. Launch **Applications → DesignCraft**. A `.zip` application is also provided.
+- **Windows:** open the `.exe` for Intel/AMD x64 or ARM64. Launch **DesignCraft** from Start.
 - **Linux (Debian/Ubuntu):** open the `.deb` using your software installer. A portable `.tar.gz` is provided for other distributions, where required system libraries must already be installed.
 
 These independent builds are unsigned/not notarized unless the release explicitly says otherwise. Operating systems may block or warn about them. The installers do not disable security protections. Users distributing broadly should sign and notarize their builds with their own publisher certificates.

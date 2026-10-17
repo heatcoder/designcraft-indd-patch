@@ -339,10 +339,10 @@ index 96498e86..b5fdfa5f 100644
  }
 diff --git a/crates/engine/src/cmd/malayalam.rs b/crates/engine/src/cmd/malayalam.rs
 new file mode 100644
-index 00000000..0c0a3972
+index 00000000..35e7a662
 --- /dev/null
 +++ b/crates/engine/src/cmd/malayalam.rs
-@@ -0,0 +1,320 @@
+@@ -0,0 +1,347 @@
 +//! Independent offline Malayalam input. InScript key positions follow the published Microsoft
 +//! Malayalam layout (KLID 0000044C); no Typeit! implementation is copied.
 +use super::{CommandSpec, always, bad, cmd, has_text, str_param};
@@ -583,11 +583,32 @@ index 00000000..0c0a3972
 +}
 +fn insert(s: &mut Session, p: &Value) -> Result<Value> {
 +    let text = params(p)?;
-+    if text.trim().is_empty() {
++    if text.is_empty() && p.get("previous").is_none() {
 +        return Err(bad("malayalam.insert", "Type some text first."));
 +    }
 +    if !designcraft_fonts::FontDb::global().has_family(FONT) {
 +        return Err(bad("malayalam.insert", "Noto Sans Malayalam is missing. Install the complete MalayalamPatch build."));
++    }
++    // A composition update may replace only the exact text immediately before its caret.
++    // Validate before changing the selection; stale UI state must never overwrite other text.
++    if let Some(previous) = p.get("previous") {
++        let start = previous
++            .get("start")
++            .and_then(Value::as_u64)
++            .and_then(|v| usize::try_from(v).ok())
++            .ok_or_else(|| bad("malayalam.insert", "Invalid composition start."))?;
++        let expected = previous.get("text").and_then(Value::as_str).ok_or_else(|| bad("malayalam.insert", "Invalid composition text."))?;
++        let d = s.doc()?;
++        let at = d.selection.text.ok_or_else(|| bad("malayalam.insert", "No text cursor."))?;
++        let story = d.doc.text_story(at.story, at.cell).ok_or(designcraft_doc::DocError::NoStory(at.story))?;
++        if !at.is_caret() || story.text.get(start..at.focus) != Some(expected) {
++            return Err(bad("malayalam.insert", "The cursor or text changed; start a new word."));
++        }
++        if let Some(d) = s.active_mut() {
++            if let Some(at) = d.selection.text.as_mut() {
++                at.anchor = start;
++            }
++        }
 +    }
 +    super::text::insert(s, &json!({"text":text, "raw":true}))?;
 +    s.edit(|doc, selection| {
@@ -634,7 +655,7 @@ index 00000000..0c0a3972
 +    }
 +    #[test]
 +    fn malayalam_insert_preserves_surrounding_format_and_undoes_once() {
-+        if designcraft_fonts::CRAFT_FONTS.is_empty() {
++        if !designcraft_fonts::CRAFT_FONTS.iter().any(|f| f.scripts.contains(&"Mlym")) {
 +            return;
 +        }
 +        let mut s = Session::new();
@@ -661,6 +682,12 @@ index 00000000..0c0a3972
 +        let text = s.doc().unwrap().doc.story(sid).unwrap().text.clone();
 +        assert!(s.execute("malayalam.insert", &json!({"text":"test","mode":"invalid"})).is_err());
 +        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().text, text);
++        let selection = s.doc().unwrap().selection.clone();
++        assert!(
++            s.execute("malayalam.insert", &json!({"text":"amma","mode":"manglish","previous":{"start":0,"text":"not the current word"}})).is_err()
++        );
++        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().text, text);
++        assert_eq!(s.doc().unwrap().selection, selection);
 +    }
 +}
 diff --git a/crates/engine/src/cmd/mod.rs b/crates/engine/src/cmd/mod.rs
@@ -751,7 +778,7 @@ index bc9c9e65..1ed09037 100644
              for (i, family, style, coords) in enumerate_faces(data) {
                  if let Some(f) = make_face(FontBytes::Static(data), FontSource::Bundled, i, family, style, coords) {
 diff --git a/crates/fonts/src/lib.rs b/crates/fonts/src/lib.rs
-index 5ff395df..4799a0b9 100644
+index 5ff395df..09a889aa 100644
 --- a/crates/fonts/src/lib.rs
 +++ b/crates/fonts/src/lib.rs
 @@ -197,7 +197,7 @@ fn shape_dir(
@@ -833,6 +860,24 @@ index 5ff395df..4799a0b9 100644
      #[test]
      fn arabic_script_runs_do_not_inherit_the_hebrew_shaper() {
          use unicode_script::Script;
+@@ -511,7 +547,7 @@ mod tests {
+ 
+     #[test]
+     fn craft_fonts_japanese_faces_cover_japanese_and_have_vertical_forms() {
+-        if CRAFT_FONTS.is_empty() {
++        if !CRAFT_FONTS.iter().any(|f| f.scripts.contains(&"Jpan")) {
+             eprintln!("skipped: built without craft-fonts (set CRAFT_FONTS_DIR to a checkout)");
+             return;
+         }
+@@ -551,7 +587,7 @@ mod tests {
+         db.set_system_fallback(false);
+         assert_eq!(db.face(DEFAULT_FAMILY, "Regular").family, DEFAULT_FAMILY);
+         assert!(!shape(&db.face(DEFAULT_FAMILY, "Regular"), "Hello", &[], |c| c).is_empty());
+-        if CRAFT_FONTS.is_empty() {
++        if !CRAFT_FONTS.iter().any(|f| f.scripts.contains(&"Jpan")) {
+             assert!(japanese_fonts().next().is_none() && japanese_document_fonts().is_empty());
+             let latin = db.face(DEFAULT_FAMILY, "Regular");
+             for language in [Some("ja"), None] {
 @@ -559,4 +595,21 @@ mod tests {
              }
          }
@@ -984,94 +1029,96 @@ index 57801e34..c21e146e 100644
 +    let d = import_idml(&fixture()).unwrap();
 +    assert!(d.assets.values().all(|a| a.data.is_empty() || a.link.is_none()));
 +}
-diff --git a/crates/ui-egui/src/dialogs.rs b/crates/ui-egui/src/dialogs.rs
-index a721fdd1..b98b5607 100644
---- a/crates/ui-egui/src/dialogs.rs
-+++ b/crates/ui-egui/src/dialogs.rs
-@@ -26,6 +26,7 @@ impl Dialog {
-                 "marginTop": "3p0", "marginBottom": "3p0", "marginInside": "3p0", "marginOutside": "3p0", "bleed": "0p0", "primaryTextFrame": false})
-             }
-             "goToPage" => json!({"page": "1"}),
-+            "malayalam" => json!({"mode":"manglish", "text":""}),
-             "qrCode" => json!({"type": "url", "content": "https://", "color": "[Black]"}),
-             "insertTable" => json!({"bodyRows": 4, "columns": 4, "headerRows": 0, "footerRows": 0}),
-             "insertXref" => json!({"linkTo": "paragraph", "style": "", "target": "", "format": ""}),
-@@ -1141,6 +1142,7 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
-         "menus" => crate::i18n::tr(&app.ui.language, "Menu Customization"),
-         "importOptions" => crate::i18n::tr(&app.ui.language, "Import Options"),
-         "fittingOptions" => crate::i18n::tr(&app.ui.language, "Frame Fitting Options"),
-+        "malayalam" => "MalayalamPatch (irajeev)",
-         "qrCode" => crate::i18n::tr(&app.ui.language, "Generate QR Code"),
-         "preferences" => crate::i18n::tr(&app.ui.language, "Preferences"),
-         "print" => crate::i18n::tr(&app.ui.language, "Print"),
-@@ -1606,6 +1608,28 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
-                     ui.end_row();
-                 });
-             }
-+            "malayalam" => {
-+                ui.set_min_width(440.0);
-+                let mut mode = d.s("mode");
-+                ui.horizontal(|ui| {
-+                    ui.selectable_value(&mut mode, "manglish".into(), "Manglish");
-+                    ui.selectable_value(&mut mode, "inscript".into(), "InScript");
-+                });
-+                d.fields.insert("mode".into(), json!(mode));
-+                ui.label(if mode == "inscript" { "InScript keys: vcmdkejx → നമസ്കാരം; Cd' → ണ്ട" } else { "Examples: namaskaaram, malayaaLam, uNTu. Case matters: T D N L R." });
-+                let mut text = d.s("text");
-+                ui.add(egui::TextEdit::multiline(&mut text).desired_width(440.0).desired_rows(4).char_limit(4096).hint_text("Type here…"));
-+                d.fields.insert("text".into(), json!(text));
-+                ui.label("Malayalam preview");
-+                match designcraft_engine::cmd::malayalam::convert(&text, &mode) {
-+                    Ok(preview) => { ui.label(egui::RichText::new(preview).size(22.0)); }
-+                    Err(error) => { ui.colored_label(egui::Color32::RED, error); }
-+                }
-+                ui.label("Inserts Unicode text with Noto Sans Malayalam. Ctrl/Cmd+Enter inserts; Enter adds a line.");
-+                if app.session.active().and_then(|s| s.selection.text).is_none() {
-+                    ui.label("Place the text cursor inside a text frame, then reopen this option to insert.");
-+                }
-+            }
-             "qrCode" => {
-                 let cur = d.s("type");
-                 ui.horizontal(|ui| {
-@@ -1704,16 +1728,18 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
-         }
-         });
-         ui.add_space(12.0);
--        let ok_label = if d.id == "closeDocument" { "  Save  " } else { "  OK  " };
-+        let ok_label = if d.id == "closeDocument" { "  Save  " } else if d.id == "malayalam" { "Insert Malayalam" } else { "  OK  " };
-+        let can_confirm = d.id != "malayalam" || (app.session.active().and_then(|s| s.selection.text).is_some() && !d.s("text").trim().is_empty());
-         ui.horizontal(|ui| {
-             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                 if ui
--                    .add(
-+                    .add_enabled(
-+                        can_confirm,
-                         egui::Button::new(crate::rtl::widget(ui, egui::RichText::new(crate::i18n::tr(&app.ui.language, ok_label)).color(egui::Color32::WHITE)))
-                             .fill(crate::theme::Tokens::get(ui.ctx()).accent_strong),
-                     )
-                     .clicked()
--                    || ui.input(|i| i.key_pressed(egui::Key::Enter))
-+                    || (can_confirm && ui.input(|i| i.key_pressed(egui::Key::Enter) && (d.id != "malayalam" || i.modifiers.command)))
-                 {
-                     result = Some(true);
-                 }
-@@ -1755,6 +1781,11 @@ pub fn confirm(app: &mut DesignApp) -> Result<Value, String> {
-         app.cancel_pdf_import();
+diff --git a/crates/ui-egui/src/canvas.rs b/crates/ui-egui/src/canvas.rs
+index 5d8218b7..99128c7a 100644
+--- a/crates/ui-egui/src/canvas.rs
++++ b/crates/ui-egui/src/canvas.rs
+@@ -1520,6 +1520,9 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
+         events.push(PointerEvent { kind: PointerKind::Move, pos: pos(p), mods: m, clicks: 1 });
      }
-     match d.id.as_str() {
-+        "malayalam" => {
-+            let result = app.run("malayalam.insert", json!({"text":d.s("text"), "mode":d.s("mode")}));
-+            if result.is_err() { app.ui.dialog = Some(d); }
-+            result
-+        }
-         "newDocument" => {
-             let margins = json!({"top": d.m("marginTop").unwrap_or(36.0), "bottom": d.m("marginBottom").unwrap_or(36.0), "inside": d.m("marginInside").unwrap_or(36.0), "outside": d.m("marginOutside").unwrap_or(36.0)});
-             app.run(
+     ui.data_mut(|d| d.insert_temp(down_id, down));
++    if pressed {
++        app.malayalam.composition = None;
++    }
+     for e in events {
+         if let Err(err) = app.session.pointer(&e, vi) {
+             app.status(err.to_string());
+@@ -1537,7 +1540,11 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
+     for e in evs {
+         match e {
+             egui::Event::Text(t) if wants_text => {
+-                let _ = app.run("text.insert", json!({"text": t}));
++                if app.malayalam.mode != "off" {
++                    crate::malayalam::type_text(app, &t, false);
++                } else {
++                    let _ = app.run("text.insert", json!({"text": t}));
++                }
+             }
+             egui::Event::Paste(t) if wants_text => {
+                 // Formatted when the system clipboard still holds what was copied here;
+@@ -1579,6 +1586,15 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
+                     _ => None,
+                 };
+                 if let Some(k) = k {
++                    if key == egui::Key::Backspace
++                        && !modifiers.command
++                        && !modifiers.ctrl
++                        && !modifiers.alt
++                        && crate::malayalam::type_text(app, "", true)
++                    {
++                        continue;
++                    }
++                    app.malayalam.composition = None;
+                     let m = Mods { shift: modifiers.shift, alt: modifiers.alt, cmd: modifiers.command, ctrl: modifiers.ctrl, space: false };
+                     let handled = app.session.tool_key(k, m, vi).unwrap_or(false);
+                     if !handled && k == ToolKey::Escape {
 diff --git a/crates/ui-egui/src/lib.rs b/crates/ui-egui/src/lib.rs
-index 1db2f591..c7d5a9e1 100644
+index 1db2f591..6fcbfb52 100644
 --- a/crates/ui-egui/src/lib.rs
 +++ b/crates/ui-egui/src/lib.rs
-@@ -1364,11 +1364,11 @@ impl DesignApp {
+@@ -15,6 +15,7 @@ pub mod dialogs;
+ pub mod dock;
+ pub mod i18n;
+ pub mod icons;
++mod malayalam;
+ pub mod menus;
+ mod panel_docking;
+ pub mod panels;
+@@ -481,6 +482,7 @@ pub struct Perf {
+ }
+ 
+ pub struct DesignApp {
++    pub(crate) malayalam: malayalam::Input,
+     pending_pdf: Option<ImportedFile>,
+     pub session: Session,
+     pub ui: UiState,
+@@ -558,6 +560,7 @@ impl DesignApp {
+             pending_pdf: None,
+             session,
+             ui: UiState::default(),
++            malayalam: Default::default(),
+             services,
+             views: HashMap::new(),
+             canvas: CanvasCache::new(),
+@@ -634,6 +637,9 @@ impl DesignApp {
+ 
+     /// THE entry point for every action (menus, shortcuts, palette, panels, control channel).
+     pub fn run(&mut self, id: &str, params: Value) -> Result<Value, String> {
++        if !matches!(id, "malayalam.insert" | "malayalam.convert") {
++            self.malayalam.composition = None;
++        }
+         if let Some(r) = menus::run_ui(self, id, &params) {
+             return r;
+         }
+@@ -1286,6 +1292,7 @@ impl DesignApp {
+         dock::flyout(self, &ctx);
+         dock::floating(self, &ctx);
+         story_editor::show(self, &ctx);
++        malayalam::show(self, &ctx);
+         dialogs::show(self, &ctx);
+         about::show(self, &ctx);
+         menus::palette(self, &ctx);
+@@ -1364,11 +1371,11 @@ impl DesignApp {
      }
  }
  
@@ -1086,7 +1133,7 @@ index 1db2f591..c7d5a9e1 100644
  }
  
  pub fn now_ms() -> f64 {
-@@ -1994,10 +1994,10 @@ mod tests {
+@@ -1994,10 +2001,10 @@ mod tests {
  
      #[test]
      fn dropped_documents_open_and_the_rest_is_placed() {
@@ -1099,7 +1146,7 @@ index 1db2f591..c7d5a9e1 100644
              assert!(!opens_as_document(name), "{name}");
          }
      }
-@@ -2026,6 +2026,18 @@ mod tests {
+@@ -2026,6 +2033,18 @@ mod tests {
          assert_eq!(alert(&app), ("Can't Place the File".to_string(), e));
      }
  
@@ -1118,39 +1165,201 @@ index 1db2f591..c7d5a9e1 100644
      #[test]
      fn file_open_failures_show_an_alert() {
          let path = unreadable_file("open.designcraft");
+diff --git a/crates/ui-egui/src/malayalam.rs b/crates/ui-egui/src/malayalam.rs
+new file mode 100644
+index 00000000..26b7d8cc
+--- /dev/null
++++ b/crates/ui-egui/src/malayalam.rs
+@@ -0,0 +1,149 @@
++//! Non-modal direct input. Composition is scoped to one document revision and caret.
++use crate::DesignApp;
++use designcraft_doc::TextSel;
++use serde_json::json;
++
++#[derive(Debug)]
++pub(crate) struct Input {
++    pub open: bool,
++    pub mode: String,
++    pub composition: Option<Composition>,
++}
++impl Default for Input {
++    fn default() -> Self {
++        Self { open: false, mode: "off".into(), composition: None }
++    }
++}
++#[derive(Debug)]
++pub(crate) struct Composition {
++    uid: u64,
++    revision: u64,
++    caret: TextSel,
++    raw: String,
++    start: usize,
++    rendered: String,
++}
++
++pub(crate) fn show(app: &mut DesignApp, ctx: &egui::Context) {
++    if !app.malayalam.open {
++        return;
++    }
++    let mut open = true;
++    let mut mode = app.malayalam.mode.clone();
++    egui::Window::new("Malayalam (irajeev)")
++        .id(egui::Id::new("malayalam_direct_input"))
++        .open(&mut open)
++        .resizable(false)
++        .collapsible(false)
++        .default_pos(egui::pos2(230.0, 110.0))
++        .show(ctx, |ui| {
++            ui.horizontal(|ui| {
++                ui.radio_value(&mut mode, "off".into(), "Off");
++                ui.radio_value(&mut mode, "manglish".into(), "Manglish");
++                ui.radio_value(&mut mode, "inscript".into(), "InScript");
++            });
++            ui.separator();
++            ui.label("Select the Type tool (T), then click inside a text frame.");
++            ui.label("Type on the page, or select existing text to replace it.");
++            ui.label("Use an English keyboard while this option is enabled.");
++            ui.label("For legacy FML text, select the whole word before replacing it.");
++            if mode == "manglish" {
++                ui.label("namaskaaram → നമസ്കാരം    malayaaLam → മലയാളം");
++                ui.label("uNTu → ഉണ്ടു    T / D / N / L / R are case-sensitive.");
++                ui.label("Space finishes a word. Backspace revises the current word.");
++            } else if mode == "inscript" {
++                ui.label("InScript keys: vcmdkejx → നമസ്കാരം    Cd' → ണ്ട");
++            }
++            ui.label("New Malayalam uses Noto Sans Malayalam. Paste keeps its normal behavior.");
++            if app.session.active().and_then(|d| d.selection.text).is_none() {
++                ui.label("Place the text cursor in a frame to begin.");
++            }
++        });
++    if mode != app.malayalam.mode {
++        let _ = app.run("app.malayalam", json!({"mode":mode}));
++    }
++    // Closing the controls also disables input, so a hidden panel never changes typing.
++    if !open {
++        app.malayalam = Input::default();
++    }
++}
++
++/// Returns true only when this input handled the event. Never transliterates clipboard data.
++pub(crate) fn type_text(app: &mut DesignApp, text: &str, backspace: bool) -> bool {
++    if app.malayalam.mode == "off" {
++        return false;
++    }
++    let old = app
++        .malayalam
++        .composition
++        .take()
++        .filter(|c| app.session.active().is_some_and(|d| d.uid == c.uid && d.revision == c.revision && d.selection.text == Some(c.caret)));
++    if backspace && old.is_none() {
++        return false;
++    }
++    let mut raw = old.as_ref().map(|c| c.raw.clone()).unwrap_or_default();
++    if backspace {
++        raw.pop();
++    } else {
++        raw.push_str(text);
++    }
++    let mode = app.malayalam.mode.clone();
++    let mut params = json!({"text":raw, "mode":mode});
++    if let Some(c) = old {
++        params["previous"] = json!({"start":c.start,"text":c.rendered});
++    }
++    match app.run("malayalam.insert", params) {
++        Ok(v) => {
++            if mode == "manglish" && !raw.is_empty() && raw.chars().all(|c| c.is_ascii_alphabetic()) {
++                if let Some(d) = app.session.active() {
++                    if let (Some(caret), Some(start), Some(rendered)) =
++                        (d.selection.text, v["start"].as_u64().and_then(|v| usize::try_from(v).ok()), v["text"].as_str())
++                    {
++                        app.malayalam.composition =
++                            Some(Composition { uid: d.uid, revision: d.revision, caret, raw, start, rendered: rendered.into() });
++                    }
++                }
++            }
++        }
++        Err(e) => app.status(e),
++    }
++    true
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn direct_malayalam_composes_replaces_backspaces_and_stops_after_navigation() {
++        if !designcraft_fonts::CRAFT_FONTS.iter().any(|f| f.scripts.contains(&"Mlym")) {
++            return;
++        }
++        let mut app = DesignApp::new(designcraft_engine::Session::new(), Default::default());
++        app.run("file.new", json!({})).unwrap();
++        let f = app.run("frame.create", json!({"rect":[20,20,400,400],"content":"text","text":"Before OLD after"})).unwrap();
++        let sid = f["story"].as_u64().unwrap();
++        app.run("text.select", json!({"story":sid,"anchor":7,"focus":10})).unwrap();
++        app.run("app.malayalam", json!({"mode":"manglish"})).unwrap();
++        for c in "namaskaaram".chars() {
++            assert!(type_text(&mut app, &c.to_string(), false));
++        }
++        let get = |a: &DesignApp| a.session.active().unwrap().doc.story(designcraft_doc::StoryId(sid)).unwrap().text.clone();
++        assert_eq!(get(&app), "Before നമസ്കാരം after");
++        type_text(&mut app, "", true);
++        assert_eq!(get(&app), "Before നമസ്കാര after");
++        type_text(&mut app, "m", false);
++        app.run("edit.undo", json!({})).unwrap();
++        assert_eq!(get(&app), "Before നമസ്കാര after");
++        app.run("edit.redo", json!({})).unwrap();
++        app.run("text.select", json!({"story":sid,"anchor":0,"focus":0})).unwrap();
++        type_text(&mut app, "amma ", false);
++        assert_eq!(get(&app), "അമ്മ Before നമസ്കാരം after");
++        app.run("app.malayalam", json!({"mode":"inscript"})).unwrap();
++        for c in "Cd'".chars() {
++            type_text(&mut app, &c.to_string(), false);
++        }
++        assert_eq!(get(&app), "അമ്മ ണ്ടBefore നമസ്കാരം after");
++        app.run("app.malayalam", json!({"mode":"off"})).unwrap();
++        assert!(!type_text(&mut app, "a", false));
++    }
++}
 diff --git a/crates/ui-egui/src/menus.rs b/crates/ui-egui/src/menus.rs
-index dc8b88bf..f96ad254 100644
+index dc8b88bf..59403708 100644
 --- a/crates/ui-egui/src/menus.rs
 +++ b/crates/ui-egui/src/menus.rs
 @@ -29,6 +29,7 @@ pub const UI_COMMANDS: &[(&str, &str, Option<&str>, &str)] = &[
      ("app.exportHtml", "Export HTML…", None, "{path?} — one self-contained web page"),
      ("app.exportXml", "Export XML…", None, "{path?} — the tagged content"),
      ("app.printBooklet", "Print Booklet…", None, "{path?} — saddle-stitched printer spreads as PDF"),
-+    ("app.malayalam", "MalayalamPatch (irajeev)…", None, "{} — offline Manglish and InScript typing"),
++    ("app.malayalam", "Malayalam (irajeev)", None, "{mode?: off|manglish|inscript} — direct typing on the page"),
      ("app.qrCode", "Generate QR Code…", None, "{} — the QR Code dialog (object.qrCode does the work)"),
      ("app.userDictionary", "User Dictionary…", None, "{} — hyphenation exceptions (hyphenation.* commands)"),
      ("app.fittingOptions", "Frame Fitting Options…", None, "{} — the dialog for object.fittingOptions"),
-@@ -330,6 +331,7 @@ pub const MENUS: &[(&str, &[&str])] = &[
+@@ -689,6 +690,8 @@ pub const MENUS: &[(&str, &[&str])] = &[
      (
-         "Type",
+         "Window",
          &[
 +            "ui:app.malayalam",
-             "ui:app.findFontDialog",
-             "-",
-             "cmd:type.createOutlines",
-@@ -875,6 +877,10 @@ pub fn run_ui(app: &mut DesignApp, id: &str, p: &Value) -> Option<Result<Value,
++            "-",
+             ">Arrange",
+             "ui:window.newWindow",
+             "ui:window.split",
+@@ -875,6 +878,16 @@ pub fn run_ui(app: &mut DesignApp, id: &str, p: &Value) -> Option<Result<Value,
              app.ui.dialog = Some(crate::dialogs::Dialog::new("userDictionary", json!({"word": ""})));
              Ok(Value::Null)
          }
 +        "app.malayalam" => {
-+            app.ui.dialog = Some(crate::dialogs::Dialog::new("malayalam", json!({})));
++            if let Some(mode) = p.get("mode").and_then(Value::as_str) {
++                if !matches!(mode, "off" | "manglish" | "inscript") {
++                    return Some(Err("Choose off, manglish or inscript".into()));
++                }
++                app.malayalam.mode = mode.into();
++            }
++            app.malayalam.open = true;
 +            Ok(Value::Null)
 +        }
          "app.qrCode" => {
              app.ui.dialog = Some(crate::dialogs::Dialog::new("qrCode", json!({})));
              Ok(Value::Null)
 diff --git a/crates/ui-egui/src/theme.rs b/crates/ui-egui/src/theme.rs
-index 193abf34..d9c88fb8 100644
+index 193abf34..08764ff6 100644
 --- a/crates/ui-egui/src/theme.rs
 +++ b/crates/ui-egui/src/theme.rs
 @@ -280,8 +280,9 @@ fn font_definitions(craft: &'static [designcraft_fonts::CraftFont], lang: &str)
@@ -1173,6 +1382,15 @@ index 193abf34..d9c88fb8 100644
      }
      // Arabic runs (rtl.rs): the Arabic face first, so letters and spaces shape as one run.
      for family in ["arabic", "arabic-semibold"] {
+@@ -379,7 +380,7 @@ mod japanese_font_tests {
+ 
+     #[test]
+     fn japanese_ui_glyphs_are_available_in_every_family() {
+-        if designcraft_fonts::CRAFT_FONTS.is_empty() {
++        if !designcraft_fonts::CRAFT_FONTS.iter().any(|f| f.scripts.contains(&"Jpan")) {
+             eprintln!("skipped: built without craft-fonts (set CRAFT_FONTS_DIR to a checkout)");
+             return;
+         }
 diff --git a/docs/file-format-parity.md b/docs/file-format-parity.md
 index 06f59de9..4c8ebbca 100644
 --- a/docs/file-format-parity.md

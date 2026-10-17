@@ -11,6 +11,8 @@ permissions:
   contents: write
 jobs:
   publish:
+    # Distribution audit is unresolved; explicit review is required before enabling release.
+    if: ${{ false }}
     runs-on: ubuntu-22.04
     env:
       GH_TOKEN: ${{ github.token }}
