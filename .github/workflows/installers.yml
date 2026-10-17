@@ -69,6 +69,15 @@ jobs:
         run: cargo test --release --locked -p designcraft exit_recovery
       - name: Package installer
         run: python scripts/package.py --source build/designcraft --bin-dir build/designcraft/target/release
+      - name: Extract and verify installer payload
+        run: python scripts/verify_package.py --source build/designcraft
+      - name: Test extracted application
+        shell: python
+        run: |
+          import json, pathlib, subprocess
+          report = next(pathlib.Path("dist").glob("verification-*.json"))
+          cli = json.loads(report.read_text())["cli"]
+          subprocess.run(["python", "scripts/smoke_packaged.py", "--cli", cli, "--work", "build/packaged-smoke"], check=True)
       - uses: actions/upload-artifact@v4
         with:
           name: irajeev-${{ matrix.name }}

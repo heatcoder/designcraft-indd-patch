@@ -22,6 +22,8 @@ def copy(src,dst):
 def notices(dst):
     for f in ['AUDIT.md','dependencies.csv','release-status.json']:
         copy(ROOT/'audit'/f,dst/f)
+    copy(ROOT/'audit/PROVENANCE.md',dst/'PROVENANCE.md')
+    copy(ROOT/'audit/notice-sources.json',dst/'notice-sources.json')
     (dst/'THIRD-PARTY-NOTICES.txt').write_bytes(gzip.decompress((ROOT/'audit/THIRD-PARTY-NOTICES.txt.gz').read_bytes()))
     copy(source/'NOTICE',dst/'DesignCraft-NOTICE.txt')
     copy(source/'assets/app-icon/LICENSE.txt',dst/'DesignCraft-icon-LICENSE.txt')
@@ -46,7 +48,7 @@ if system=='Darwin':
     if icon: copy(icon,contents/'Resources/DesignCraft.icns')
     notices(contents/'Resources/Notices')
     info={'CFBundleExecutable':'DesignCraft','CFBundleIdentifier':'com.irajeev.designcraft.indd','CFBundleName':'DesignCraft',
-          'CFBundleDisplayName':'DesignCraft','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.8.0','CFBundleVersion':'0.8.1',
+          'CFBundleDisplayName':'DesignCraft','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.8.0','CFBundleVersion':'0.8.2',
           'IRajeevPatchVersion':VERSION,'LSMinimumSystemVersion':'11.0','NSHighResolutionCapable':True,'CFBundleIconFile':'DesignCraft',
           'NSHumanReadableCopyright':'DesignCraft authors. INDD patch distribution: irajeev.com.',
           'CFBundleDocumentTypes':[{'CFBundleTypeName':'DesignCraft and InDesign documents','CFBundleTypeRole':'Editor','LSHandlerRank':'Alternate','CFBundleTypeExtensions':['designcraft','idml','indd','indt']}]}
@@ -60,14 +62,14 @@ if system=='Darwin':
     components=plistlib.loads(cp.read_bytes())
     for item in components: item['BundleIsRelocatable']=False
     cp.write_bytes(plistlib.dumps(components))
-    run('pkgbuild','--root',work/'root','--component-plist',cp,'--identifier','com.irajeev.designcraft.indd','--version','0.8.1','--install-location','/Applications',component)
+    run('pkgbuild','--root',work/'root','--component-plist',cp,'--identifier','com.irajeev.designcraft.indd','--version','0.8.2','--install-location','/Applications',component)
     resources=work/'resources';resources.mkdir()
     (resources/'welcome.html').write_text('''<html><body style="font-family:Helvetica;color:#273d37;background:#faf7f2;padding:20px"><h1 style="font-family:Georgia;font-size:44px;font-weight:normal">irajeev.com</h1><h2>DesignCraft · INDD opening</h2><p>Install DesignCraft alongside your existing app.</p><p>Open InDesign documents directly from File → Open. Save edits as DesignCraft or IDML.</p><p>This independent experimental build uses the DesignCraft and indd-utils open-source projects. Layout, fonts and linked images require review.</p></body></html>''')
     (resources/'conclusion.html').write_text('''<html><body style="font-family:Helvetica;padding:20px"><h1>Ready to open INDD</h1><p>Open <b>Applications → MalayalamPatch → DesignCraft</b>, then choose File → Open.</p><p>Your original DesignCraft installation is still available. Keep your original INDD documents and check imported layouts before production use.</p><p>irajeev.com</p></body></html>''')
     copy(ROOT/'NOTICE.md',resources/'notice.txt')
     dist=work/'Distribution.xml'
     host='arm64' if arch=='aarch64' else 'x86_64'
-    dist.write_text(f'''<?xml version="1.0"?><installer-gui-script minSpecVersion="2"><title>irajeev.com — DesignCraft INDD Patch</title><welcome file="welcome.html" mime-type="text/html"/><conclusion file="conclusion.html" mime-type="text/html"/><license file="notice.txt"/><options customize="never" require-scripts="false" hostArchitectures="{host}"/><domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false"/><choices-outline><line choice="main"/></choices-outline><choice id="main" visible="false" title="DesignCraft"><pkg-ref id="com.irajeev.designcraft.indd"/></choice><pkg-ref id="com.irajeev.designcraft.indd" version="0.8.1" onConclusion="none">payload.pkg</pkg-ref></installer-gui-script>''')
+    dist.write_text(f'''<?xml version="1.0"?><installer-gui-script minSpecVersion="2"><title>irajeev.com — DesignCraft INDD Patch</title><welcome file="welcome.html" mime-type="text/html"/><conclusion file="conclusion.html" mime-type="text/html"/><license file="notice.txt"/><options customize="never" require-scripts="false" hostArchitectures="{host}"/><domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false"/><choices-outline><line choice="main"/></choices-outline><choice id="main" visible="false" title="DesignCraft"><pkg-ref id="com.irajeev.designcraft.indd"/></choice><pkg-ref id="com.irajeev.designcraft.indd" version="0.8.2" onConclusion="none">payload.pkg</pkg-ref></installer-gui-script>''')
     run('productbuild','--distribution',dist,'--resources',resources,'--package-path',work,out/f'irajeev-designcraft-indd-{VERSION}-macos-{arch}.pkg')
     run('ditto','-c','-k','--sequesterRsrc','--keepParent',app,out/f'irajeev-designcraft-indd-{VERSION}-macos-{arch}.zip')
 elif system=='Windows':
@@ -75,6 +77,12 @@ elif system=='Windows':
     for name in ['designcraft.exe','designcraft-cli.exe']: copy(bins/name,stage/name)
     notices(stage/'Notices')
     compiler=shutil.which('ISCC') or r'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+    compiler_root=Path(compiler).parent
+    licence_files=[f for f in compiler_root.rglob('*') if f.is_file() and f.suffix.lower() in ('.txt','.rtf','.html') and any(word in f.name.lower() for word in ('license','licence','copying','copyright'))]
+    if not licence_files: raise SystemExit('Inno Setup runtime licence files missing')
+    for f in licence_files: copy(f,stage/'Notices/InnoSetup'/f.relative_to(compiler_root))
+    version=subprocess.run([compiler,'/?'],capture_output=True,text=True).stdout
+    (stage/'Notices/InnoSetup/compiler-version.txt').write_text(version)
     run(compiler,f'/DBinDir={stage}',f'/DOutputDir={out}',f'/DArch={arch}',f'/DVersion={VERSION}',ROOT/'scripts/windows.iss')
 elif system=='Linux':
     debarch={'x86_64':'amd64','aarch64':'arm64'}.get(arch)
@@ -86,7 +94,7 @@ elif system=='Linux':
     desktop=stage/'usr/share/applications/irajeev-designcraft.desktop';desktop.parent.mkdir(parents=True)
     desktop.write_text('[Desktop Entry]\nType=Application\nName=DesignCraft\nComment=Direct INDD opening — irajeev.com\nExec=/opt/irajeev-designcraft/designcraft %F\nIcon=irajeev-designcraft\nTerminal=false\nCategories=Graphics;Publishing;\nMimeType=application/x-indesign;application/vnd.adobe.indesign-idml-package;\n')
     control=stage/'DEBIAN/control';control.parent.mkdir()
-    control.write_text(f'Package: irajeev-designcraft-indd\nVersion: 0.8.0-1\nArchitecture: {debarch}\nMaintainer: irajeev.com\nHomepage: https://irajeev.com\nDepends: libc6, libgcc-s1, libstdc++6, libx11-6, libxkbcommon0, libwayland-client0, libvulkan1\nDescription: DesignCraft with direct INDD import\n Independent side-by-side build distributed by irajeev.com.\n')
+    control.write_text(f'Package: irajeev-designcraft-indd\nVersion: 0.8.0-2\nArchitecture: {debarch}\nMaintainer: irajeev.com\nHomepage: https://irajeev.com\nDepends: libc6, libgcc-s1, libstdc++6, libx11-6, libxkbcommon0, libwayland-client0, libvulkan1\nDescription: DesignCraft with direct INDD import\n Independent side-by-side build distributed by irajeev.com.\n')
     run('dpkg-deb','--root-owner-group','--build',stage,out/f'irajeev-designcraft-indd-{VERSION}-linux-{arch}.deb')
     # Also provide a portable archive for other Linux distributions. No installer is claimed.
     run('tar','-C',app,'-czf',out/f'irajeev-designcraft-indd-{VERSION}-linux-{arch}.tar.gz','.')

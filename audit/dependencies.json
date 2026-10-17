@@ -1019,8 +1019,8 @@
     "source": "registry+https://github.com/rust-lang/crates.io-index",
     "repository": "http://github.com/SSheldon/rust-dispatch",
     "manifest_sha256": "bd6cecbea33be54304d73d48e29182b4baff69695a25e68d7ac67ff3e69263a9",
-    "licence_files": "",
-    "review": "REVIEW REQUIRED: complete licence text not collected; manifest declaration only"
+    "licence_files": "third-party-notices/dispatch-0.2.0/Cargo.toml.orig; third-party-notices/dispatch-0.2.0/DISTRIBUTOR-NOTICE.txt",
+    "review": "Declared MIT terms and author attribution included; distributor-assembled notice, not an upstream LICENSE. Upstream issue #18 remains unanswered; authoritative notice confirmation outstanding."
   },
   {
     "name": "dispatch2",
@@ -3483,8 +3483,8 @@
     "source": "registry+https://github.com/rust-lang/crates.io-index",
     "repository": "https://github.com/r-efi/r-efi",
     "manifest_sha256": "dba000c0173b09b1e3b69afa42a715b5ab64355e6502ce6d9d1767c7845cf402",
-    "licence_files": "",
-    "review": "REVIEW REQUIRED: complete licence text not collected; manifest declaration only"
+    "licence_files": "third-party-notices/r-efi-5.3.0/AUTHORS",
+    "review": "Resolved: exact packaged AUTHORS contains full MIT terms and copyright notices; MIT alternative selected."
   },
   {
     "name": "r-efi",
@@ -3494,8 +3494,8 @@
     "source": "registry+https://github.com/rust-lang/crates.io-index",
     "repository": "https://github.com/r-efi/r-efi",
     "manifest_sha256": "a021f9fb0645cc5de5770cf7f41594c1deff4b388eca933b289752aa52666829",
-    "licence_files": "",
-    "review": "REVIEW REQUIRED: complete licence text not collected; manifest declaration only"
+    "licence_files": "third-party-notices/r-efi-6.0.0/AUTHORS",
+    "review": "Resolved: exact packaged AUTHORS contains full MIT terms and copyright notices; MIT alternative selected."
   },
   {
     "name": "rand",

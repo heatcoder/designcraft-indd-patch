@@ -1,0 +1,34 @@
+[
+  {
+    "path": "docs/brand/artcraft-logo-white.png",
+    "sha256": "8b86aeb06a12a90ba77a60e0d90329272310e244ee5c1f9b161b391280ca79d8"
+  },
+  {
+    "path": "docs/brand/artcraft-mark-black.png",
+    "sha256": "5954cc0306e1b9d7beb47097e2e842157113a39d9aba078b57304902687936a9"
+  },
+  {
+    "path": "docs/brand/artcraft-mark-black.svg",
+    "sha256": "570adcb4f7ba8ca0647f97074476bab81d3272988f1cdee52efa21bf026036a4"
+  },
+  {
+    "path": "docs/brand/artcraft-logo-white.svg",
+    "sha256": "a3e03dc49f9ad4225b8517d5424309c8d1c864d3996d862190d9cc797d5af427"
+  },
+  {
+    "path": "docs/brand/artcraft-mark.svg",
+    "sha256": "f87af81b6fa411da8820eed2bfdcc54c0ee9cd453b4e868c64f56c69db142d0e"
+  },
+  {
+    "path": "docs/brand/artcraft-logo.png",
+    "sha256": "08fc6d9d3717e8f13417bac6f9025b50e11d1e0b32e9e000883d2fe0c4a0c67b"
+  },
+  {
+    "path": "docs/brand/artcraft-logo.svg",
+    "sha256": "3188971e1affdf4f6be4fa65f715376a7a305e6aa741ec78b0296c8f934eff08"
+  },
+  {
+    "path": "docs/brand/artcraft-mark.png",
+    "sha256": "9d372157a949c147318561e629b11561c28b7cbc14c84b516a3fe6e84d8fbbad"
+  }
+]
