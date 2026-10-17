@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.platforms == 'windows' && '[{"os": "windows-2025", "name": "windows-x86_64"}, {"os": "windows-11-arm", "name": "windows-aarch64"}]' || '[{"os": "macos-15-intel", "name": "macos-x86_64"}, {"os": "macos-15", "name": "macos-aarch64"}, {"os": "windows-2025", "name": "windows-x86_64"}, {"os": "windows-11-arm", "name": "windows-aarch64"}, {"os": "ubuntu-22.04", "name": "linux-x86_64"}, {"os": "ubuntu-22.04-arm", "name": "linux-aarch64"}]') }}
+        include: >-
+          ${{ fromJSON(inputs.platforms == 'windows' && '[{"os": "windows-2025", "name": "windows-x86_64"}, {"os": "windows-11-arm", "name": "windows-aarch64"}]' || '[{"os": "macos-15-intel", "name": "macos-x86_64"}, {"os": "macos-15", "name": "macos-aarch64"}, {"os": "windows-2025", "name": "windows-x86_64"}, {"os": "windows-11-arm", "name": "windows-aarch64"}, {"os": "ubuntu-22.04", "name": "linux-x86_64"}, {"os": "ubuntu-22.04-arm", "name": "linux-aarch64"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
