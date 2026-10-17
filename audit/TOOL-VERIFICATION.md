@@ -19,6 +19,8 @@ Implemented Free Transform, Measure, Note, Color Theme and Vertical Type on a Pa
 
 Other-platform run: https://github.com/heatcoder/designcraft-indd-patch/actions/runs/39020248603
 
-The all-platform installer run is tracked separately. These focused checks do not constitute the complete upstream quality gate. Public distribution remains paused for the existing notice/provenance review. The Mac package is not Apple-notarized.
+Five independent CI targets passed: Apple Silicon, Windows x64/ARM and Linux x64/ARM. The additional Intel Mac CI run remains in progress; local Intel Mac verification is complete. These focused checks do not constitute the complete upstream quality gate. Public distribution remains paused for the existing notice/provenance review. The Mac package is not Apple-notarized.
 
 See TOOL-GUIDE.md for use and limits. No new external dependencies or Typeit implementation were added.
+
+The full upstream gate stopped at missing Clippy. Formatting, all 50 asset attributions and layering for 20 crates passed. Full workspace/WASM validation is not claimed.
