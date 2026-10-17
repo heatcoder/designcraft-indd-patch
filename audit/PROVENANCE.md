@@ -1,6 +1,6 @@
 # INDD reader provenance review — 17 October 2026
 
-Publisher: iRajeev. This is an evidence review, not legal clearance. **No stolen Adobe code was identified.** Outstanding questions concern independently verifying upstream attestations, not a finding of theft.
+Publisher: Heatcoder. This is an evidence review, not legal clearance. **No stolen Adobe code was identified.** Outstanding questions concern independently verifying upstream attestations, not a finding of theft.
 
 ## Source chain
 
@@ -31,3 +31,7 @@ No Typeit! sources, VB6 controls/OCX, proprietary document fonts (including Mini
 - Independent IP review would be needed to resolve historical chain-of-title questions beyond the evidence available here. This audit does not provide that clearance.
 - dispatch 0.2.0 explicitly declares MIT and names Steven Sheldon. The distributor includes those declarations and standard MIT terms. Upstream issue https://github.com/SSheldon/rust-dispatch/issues/18 remains unanswered: no original full copyright notice was recovered. Do not present the assembled notice as an upstream-authored licence file.
 - Signing/notarization and platform UI testing are separate from source provenance.
+
+## Typeit exclusion recheck
+
+The local Typeit! folder contains 49 files. None is an exact-file match to the reviewed distribution source. The installer verifier also rejects their hashes and VB6/control payload extensions. See TYPEIT-EXCLUSION.json. This supplements the review of the independently implemented Rust Malayalam input; it is not an exhaustive similarity or legal ownership certificate.

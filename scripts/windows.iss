@@ -5,7 +5,7 @@
 AppId=irajeev.designcraft.indd
 AppName=DesignCraft
 AppVersion={#Version}
-AppPublisher=irajeev.com
+AppPublisher=Heatcoder
 AppPublisherURL=https://irajeev.com
 DefaultDirName={autopf}\MalayalamPatch\DesignCraft
 DefaultGroupName=MalayalamPatch

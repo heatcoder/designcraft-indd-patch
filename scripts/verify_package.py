@@ -42,11 +42,14 @@ else:
  # Record imports if Visual Studio dumpbin is available on this runner.
  dumpbin=shutil.which('dumpbin')
  if dumpbin:run(dumpbin,'/DEPENDENTS',binary)
+typeit_hashes=set(json.loads((root/'audit/TYPEIT-EXCLUSION.json').read_text(encoding='utf-8'))['excluded_file_sha256'])
+assert not typeit_hashes.intersection(inventory.values()),'Typeit file detected in payload'
+assert 'Heatcoder' in (notices/'NOTICE.md').read_text(encoding='utf-8'),'Publisher notice missing'
 excluded={x['sha256'] for x in json.loads((root/'audit/excluded-brand-assets.json').read_text(encoding='utf-8'))}
 assert not excluded.intersection(inventory.values()),'Restricted artwork file detected'
 for path in inventory:
  name=Path(path).name.lower()
- assert not name.endswith(('.indd','.indt','.idml','.designcraft','.ocx','.vbp','.frm','.ttf','.otf','.ttc')),path
+ assert not name.endswith(('.indd','.indt','.idml','.designcraft','.ocx','.vbp','.frm','.frx','.bas','.cls','.ttf','.otf','.ttc')),path
  assert not any(x in name for x in ('minion','typeit','artcraft-mark','artcraft-logo')),path
 bundle=(notices/'THIRD-PARTY-NOTICES.txt').read_bytes();assert bundle==gzip.decompress((root/'audit/THIRD-PARTY-NOTICES.txt.gz').read_bytes())
 for required in [b'dispatch-0.2.0/DISTRIBUTOR-NOTICE.txt',b'Steven Sheldon',b'r-efi-5.3.0/AUTHORS',b'Adobe-XMP',b'LICENSE_FOXIT']:

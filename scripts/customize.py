@@ -36,7 +36,7 @@ pub fn paint_mark(ui: &egui::Ui, rect: Rect, color: Color32) {
         if p.is_file():p.unlink()
 
     chrome=source/'crates/ui-egui/src/chrome.rs'
-    c=chrome.read_text(encoding='utf-8').replace('Join the ArtCraft community','Independent DesignCraft build').replace('Get help, share your layouts and shape what we build next.','MalayalamPatch by iRajeev. Based on open-source DesignCraft.').replace('Join our Discord','Upstream community').replace('discord_button(ui, "Discord", vec2(78.0, 22.0))','discord_button(ui, "Upstream", vec2(90.0, 22.0))')
+    c=chrome.read_text(encoding='utf-8').replace('Join the ArtCraft community','Independent DesignCraft build').replace('Get help, share your layouts and shape what we build next.','MalayalamPatch by Heatcoder. Based on open-source DesignCraft.').replace('Join our Discord','Upstream community').replace('discord_button(ui, "Discord", vec2(78.0, 22.0))','discord_button(ui, "Upstream", vec2(90.0, 22.0))')
     chrome.write_text(c, encoding='utf-8')
     menus=source/'crates/ui-egui/src/menus.rs'
     menus.write_text(menus.read_text(encoding='utf-8').replace('Join the ArtCraft Discord…','Upstream community…').replace('ArtCraft Website…','Upstream website…').replace('ArtCraft App Page…','Upstream app page…'), encoding='utf-8')

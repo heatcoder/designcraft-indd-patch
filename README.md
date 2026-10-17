@@ -1,4 +1,4 @@
-# MalayalamPatch by iRajeev
+# MalayalamPatch by Heatcoder
 
 A free enhancement for DesignCraft, adding INDD opening and Malayalam typing. Published by **iRajeev**, built on open-source projects; credits and licences are included.
 

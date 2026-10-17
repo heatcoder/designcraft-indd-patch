@@ -1,6 +1,6 @@
-# MalayalamPatch by iRajeev — distribution audit
+# MalayalamPatch by Heatcoder — distribution audit
 
-**Publisher: iRajeev.** MalayalamPatch is a free enhancement for DesignCraft, adding INDD opening and Malayalam typing. It builds on open-source projects whose credits and licences accompany the software. In this report, “third-party components” means upstream libraries, fonts and other incorporated material.
+**Publisher: Heatcoder.** MalayalamPatch is a free enhancement for DesignCraft, adding INDD opening and Malayalam typing. It builds on open-source projects whose credits and licences accompany the software. In this report, “third-party components” means upstream libraries, fonts and other incorporated material.
 
 Audit date: 17 October 2026. **Release decision: HOLD for completion of the release checks below.** This is a source/dependency and packaging audit, not a legal clearance certificate or a complete security audit. Generated code is not assumed cleared for redistribution.
 
@@ -60,7 +60,7 @@ The Cargo inventory is not the whole licence inventory. These also matter:
 | Spanish and Portuguese hyphenation | hypher embedded pattern data: Spanish MIT; Portuguese BSD 3-Clause | Include the full pattern notices in DesignCraft NOTICE, not just hypher's crate licence. |
 | ArtCraft name/marks | **Not open source**, `docs/brand/LICENSE-brand.txt` | Modified distributions must remove marks and avoid endorsement. The earlier app painted the mark in code. Current source replaces it with neutral “DC” text and describes the build as independent. Verify final binaries and source packages contain no restricted mark assets. Plain attribution to the ArtCraft team is retained. |
 | DesignCraft cat app icon | Separately declared MIT OR Apache-2.0 in assets/app-icon/LICENSE.txt | Distinct from the restricted ArtCraft mark; preserve its notice. |
-| iRajeev branding | Publisher branding for this modified DesignCraft build. | Publisher identity is distinct from upstream component authorship. Trademark ownership and rights to any externally sourced logo assets were outside this audit’s verification scope. |
+| Heatcoder publisher identity / iRajeev product branding | Branding for this modified DesignCraft build. | Publisher identity is distinct from upstream component authorship. Trademark ownership and rights to any externally sourced logo assets were outside this audit’s verification scope. |
 | Windows Inno Setup installer runtime | Inno Setup licence; preserve existing copyright/web addresses; bundled subcomponents have additional terms | Do not remove runtime acknowledgements. Pin and inventory the actual compiler version and inspect final EXE notices; current hosted-runner installation is not version-pinned. |
 | Rust standard libraries/compiler support | MIT/Apache terms and Rust's own third-party notices | Version 1.95.0 pinned; compiler is a build tool, but linked standard/compiler-support code must be considered. Collect the toolchain's notices and compare final link outputs. |
 | Host operating-system frameworks and shared libraries | macOS frameworks, Windows system DLLs, Linux distro libraries under their respective terms | Referenced system dependencies are not automatically bundled. Verify `otool -L`, PE imports and `ldd` on final artifacts. If shipping extra DLLs/shared objects, add their exact versions/licences and any source obligations. |
@@ -106,3 +106,7 @@ The previously missed `r-efi` notices were found in each published crate’s `AU
 - The extracted CLI is tested with a hash-pinned CC0 INDD file, IDML export, Malayalam replacement, undo/redo and InScript conversion. Direct canvas keyboard-event regression tests remain separate.
 - See [PROVENANCE.md](PROVENANCE.md). No stolen Adobe code was identified. Historical origin uncertainties remain qualified questions rather than findings of copying.
 - Public release remains on hold; new per-platform verification reports must pass before describing the final artifacts as checked.
+
+## Heatcoder publisher update
+
+Candidate `.3` changes the publisher to Heatcoder. The Malayalam (irajeev) menu name and irajeev.com website remain product identities. TYPEIT-EXCLUSION.json records a repeat exclusion check; final installers reject hashes of all 49 local Typeit! files. Earlier `.2` build results do not validate the changed `.3` packages.
