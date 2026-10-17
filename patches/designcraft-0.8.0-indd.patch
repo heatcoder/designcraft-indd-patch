@@ -842,6 +842,28 @@ index 5ff395df..4799a0b9 100644
 +        assert!(shape(&face, "ണ്ട", &[], |c| c).len() < "ണ്ട".chars().count());
 +    }
  }
+diff --git a/crates/fonts/src/tests_fallback.rs b/crates/fonts/src/tests_fallback.rs
+index d9e27ac6..bc30822d 100644
+--- a/crates/fonts/src/tests_fallback.rs
++++ b/crates/fonts/src/tests_fallback.rs
+@@ -136,6 +136,8 @@ const AA: char = '\u{0D3E}';
+ fn malayalam_takes_a_font_made_for_it() {
+     // Arial Unicode MS maps Malayalam but can't shape it (no conjuncts); loaded first, it won.
+     let db = db_with(&[("Arial Unicode MS", &[KA, VIRAMA, AA]), ("Malayalam Sangam MN", &[KA, VIRAMA, AA])]);
++    // Isolate this synthetic fallback scenario from an optional bundled Malayalam face.
++    db.faces.write().unwrap().retain(|f| f.family != "Noto Sans Malayalam");
+     for c in [KA, VIRAMA, AA] {
+         for language in [None, Some("en-US"), Some("ml")] {
+             assert_eq!(family(&db, c, language).as_deref(), Some("Malayalam Sangam MN"), "{c:?} {language:?}");
+@@ -153,6 +155,8 @@ fn malayalam_fonts_load_from_the_font_folders_when_first_needed() {
+     std::fs::create_dir_all(&dir).unwrap();
+     std::fs::write(dir.join("noto.ttf"), font_with("Noto Sans Malayalam", &[KA]).unwrap()).unwrap();
+     let db = FontDb::with_font_dirs(vec![dir]);
++    // Exercise lazy loading rather than the independently tested embedded font.
++    db.faces.write().unwrap().retain(|f| f.family != "Noto Sans Malayalam");
+     db.add_font(font_with("Arial Unicode MS", &[KA]).unwrap());
+     assert!(!db.is_loaded("Noto Sans Malayalam"));
+     assert_eq!(family(&db, KA, None).as_deref(), Some("Noto Sans Malayalam"));
 diff --git a/crates/idml/src/import.rs b/crates/idml/src/import.rs
 index 1a4fa65e..d97fb34d 100644
 --- a/crates/idml/src/import.rs
