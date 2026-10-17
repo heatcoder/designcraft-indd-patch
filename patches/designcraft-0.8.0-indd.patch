@@ -1,0 +1,465 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index e77a81be..7f127d9c 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -983,6 +983,7 @@ dependencies = [
+  "hayro-cmap",
+  "hayro-interpret",
+  "hayro-syntax",
++ "indd",
+  "kurbo",
+  "log",
+  "quick-xml 0.38.4",
+@@ -2266,6 +2267,11 @@ version = "0.14.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "09e54e57b4c48b40f7aec75635392b12b3421fa26fe8b4332e63138ed278459c"
+ 
++[[package]]
++name = "indd"
++version = "0.1.0"
++source = "git+https://github.com/storytold/indd-utils?rev=7f3060e5bce78d21ea70e0d5eacb96edce15dfbe#7f3060e5bce78d21ea70e0d5eacb96edce15dfbe"
++
+ [[package]]
+ name = "indexmap"
+ version = "2.14.2"
+diff --git a/Cargo.toml b/Cargo.toml
+index e76609e0..b2e515fb 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -66,6 +66,9 @@ krilla = { version = "0.8", features = ["pdf"] }
+ hayro = "0.7"
+ quick-xml = "0.38"
+ zip = { version = "3", default-features = false, features = ["deflate"] }
++# INDD/INDT → IDML conversion for File › Open: storytold/indd-utils, pinned by rev like the
++# craft-libs crates (MIT OR Apache-2.0, no dependencies, builds for wasm).
++indd = { git = "https://github.com/storytold/indd-utils", rev = "7f3060e5bce78d21ea70e0d5eacb96edce15dfbe" }
+ 
+ # ui
+ # Shared frontend components; keep this dependency above the engine boundary.
+diff --git a/README.md b/README.md
+index 0ec6540b..281325f1 100644
+--- a/README.md
++++ b/README.md
+@@ -87,8 +87,8 @@ by its own renderer. Try it yourself with `File → New → Sample Document`, or
+   Line breaks are identical on screen and in PDF.
+ - **Fast.** Multithreaded SIMD rendering (vello_cpu), copy-on-write documents with O(1) undo
+   snapshots, and cached composition.
+-- **Open.** A documented native format, IDML import and export, and PNG, PDF (PDF/X-4, PDF/A-2b)
+-  and EPUB export.
++- **Open.** A documented native format, IDML import and export, INDD import (through
++  [indd-utils](https://github.com/storytold/indd-utils)), and PNG, PDF (PDF/X-4, PDF/A-2b) and EPUB export.
+   No subscription, no licence server, no telemetry.
+ - **Agent-native.** Every menu item, tool gesture, panel control and dialog can be driven over a
+   JSON control channel and an **MCP server**, so Claude and other agents can lay out and edit
+diff --git a/apps/designcraft-web/src/web.rs b/apps/designcraft-web/src/web.rs
+index fe7cca4a..1ba0617a 100644
+--- a/apps/designcraft-web/src/web.rs
++++ b/apps/designcraft-web/src/web.rs
+@@ -5,7 +5,7 @@ use designcraft_engine::Session;
+ use designcraft_ui_egui::{DesignApp, ImportRequest, ImportedFile, Inbox, Services};
+ use wasm_bindgen::JsCast as _;
+ 
+-const DOC_EXTS: &[&str] = &["designcraft", "idml"];
++const DOC_EXTS: &[&str] = &["designcraft", "idml", "indd", "indt"];
+ const IMAGE_EXTS: &[&str] = &[
+     "png",
+     "jpg",
+@@ -126,7 +126,7 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
+             } else if request.purpose == "place" {
+                 rfd::AsyncFileDialog::new().add_filter("Graphics", IMAGE_EXTS)
+             } else {
+-                rfd::AsyncFileDialog::new().add_filter("DesignCraft", DOC_EXTS)
++                rfd::AsyncFileDialog::new().add_filter("DesignCraft, IDML or InDesign", DOC_EXTS)
+             };
+             wasm_bindgen_futures::spawn_local(async move {
+                 let Some(file) = dialog.pick_file().await else {
+diff --git a/apps/designcraft/src/main.rs b/apps/designcraft/src/main.rs
+index 2ac607bb..c5a83505 100644
+--- a/apps/designcraft/src/main.rs
++++ b/apps/designcraft/src/main.rs
+@@ -191,9 +191,10 @@ fn open_filters(purpose: &str) -> &'static [OpenFilter] {
+             OpenFilter { name: "Video and sound", extensions: &["mp4", "m4v", "mov", "webm", "mp3", "m4a", "wav", "ogg"] },
+         ],
+         _ => &[
+-            OpenFilter { name: "DesignCraft or IDML", extensions: &["designcraft", "idml"] },
++            OpenFilter { name: "DesignCraft, IDML or InDesign", extensions: &["designcraft", "idml", "indd", "indt"] },
+             OpenFilter { name: "DesignCraft", extensions: &["designcraft"] },
+             OpenFilter { name: "InDesign Markup (IDML)", extensions: &["idml"] },
++            OpenFilter { name: "InDesign document or template (INDD, INDT)", extensions: &["indd", "indt"] },
+         ],
+     }
+ }
+@@ -383,7 +384,9 @@ mod tests {
+         assert!(place.len() > 1, "the place dialog keeps a filter for each kind of file");
+         assert!(place.iter().any(|filter| filter.extensions.contains(&"png")));
+         let documents = super::open_filters("");
+-        assert!(documents.iter().any(|filter| filter.extensions.contains(&"designcraft")));
++        for ext in ["designcraft", "idml", "indd", "indt"] {
++            assert!(documents.first().is_some_and(|filter| filter.extensions.contains(&ext)), "{ext} is missing from the first Open filter");
++        }
+     }
+ }
+ 
+diff --git a/crates/engine/Cargo.toml b/crates/engine/Cargo.toml
+index 1de90d14..0f5f1e78 100644
+--- a/crates/engine/Cargo.toml
++++ b/crates/engine/Cargo.toml
+@@ -23,6 +23,7 @@ designcraft-textimport = { workspace = true }
+ designcraft-pdf = { workspace = true }
+ designcraft-tools = { workspace = true }
+ designcraft-idml = { workspace = true }
++indd = { workspace = true }
+ serde = { workspace = true }
+ serde_json = { workspace = true }
+ thiserror = { workspace = true }
+diff --git a/crates/engine/src/cmd/file.rs b/crates/engine/src/cmd/file.rs
+index 4b048674..7865221f 100644
+--- a/crates/engine/src/cmd/file.rs
++++ b/crates/engine/src/cmd/file.rs
+@@ -18,9 +18,9 @@ pub fn specs() -> Vec<CommandSpec> {
+         cmd!(noundo "file.newSample", "Sample Document", ["Help"], None, "{} — a multi-page magazine sample", always, file_sample),
+         cmd!(query "file.presets", "Document Presets", [], None, "{}", always, |_, _| Ok(serde_json::to_value(PRESETS).unwrap_or_default())),
+         cmd!(noundo "file.open", "Open…", ["File"], Some("Cmd+O"),
+-            "{path} — .designcraft or .idml; the fonts in a `Document Fonts` folder beside it load first → {index, documentFonts: faces loaded, warnings: font files skipped (and, for .idml, package parts missing)}",
++            "{path} — .designcraft, .idml, or an InDesign .indd/.indt (converted to IDML; its conversion warnings join `warnings`); the fonts in a `Document Fonts` folder beside it load first → {index, documentFonts: faces loaded, warnings: conversion warnings, font files skipped and, for .idml, .indd and .indt, package parts missing}",
+             always, file_open),
+-        cmd!(noundo "file.openBytes", "Open Bytes", [], None, "{name, base64} — DesignCraft JSON or an IDML package", always, file_open_bytes),
++        cmd!(noundo "file.openBytes", "Open Bytes", [], None, "{name, base64} — DesignCraft JSON, an IDML package or an InDesign .indd/.indt", always, file_open_bytes),
+         cmd!(noundo "file.save", "Save", ["File"], Some("Cmd+S"), "{path?}", has_doc, file_save),
+         cmd!(noundo "file.saveAs", "Save As…", ["File"], Some("Cmd+Shift+S"), "{path}", has_doc, file_save),
+         cmd!(noundo "file.saveACopy", "Save a Copy…", ["File"], None, "{path} — writes the document without changing which file it is or its unsaved state", has_doc, |s, p| {
+@@ -161,7 +161,7 @@ fn file_open(s: &mut Session, p: &Value) -> Result<Value> {
+     let path = str_param(p, "path").ok_or_else(|| bad("file.open", "missing `path`"))?;
+     #[cfg(not(target_arch = "wasm32"))]
+     {
+-        if path.to_ascii_lowercase().ends_with(".idml") {
++        if path.to_ascii_lowercase().ends_with(".idml") || super::interchange::has_indd_extension(path) {
+             return super::interchange::open_idml(s, p);
+         }
+         let bytes = std::fs::read(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+@@ -220,8 +220,9 @@ fn document_fonts_folder(dir: &std::path::Path) -> std::path::PathBuf {
+ 
+ fn file_open_bytes(s: &mut Session, p: &Value) -> Result<Value> {
+     let b = base64_decode(str_param(p, "base64").unwrap_or(""));
+-    // IDML packages are recognised by their stored `mimetype` first entry.
+-    if designcraft_idml::is_idml(&b) {
++    // IDML packages are recognised by their stored `mimetype` first entry, INDD files by their
++    // signature (or their name).
++    if designcraft_idml::is_idml(&b) || super::interchange::is_indd(str_param(p, "name").unwrap_or_default(), &b) {
+         return super::interchange::open_idml(s, p);
+     }
+     let mut d = from_bytes(&b)?;
+diff --git a/crates/engine/src/cmd/interchange.rs b/crates/engine/src/cmd/interchange.rs
+index 96498e86..b5fdfa5f 100644
+--- a/crates/engine/src/cmd/interchange.rs
++++ b/crates/engine/src/cmd/interchange.rs
+@@ -1,4 +1,5 @@
+-//! Interchange formats: IDML (InDesign Markup Language) import and export.
++//! Interchange formats: IDML (InDesign Markup Language) import and export, and INDD/INDT
++//! import (converted to IDML in memory by indd-utils).
+ 
+ use designcraft_doc::Document;
+ use serde_json::{Value, json};
+@@ -13,7 +14,7 @@ pub fn specs() -> Vec<CommandSpec> {
+             "{path?, embedImages?: true} — writes an IDML package to `path`, or returns {base64} without a path",
+             has_doc, export_idml),
+         cmd!(noundo "file.openIdml", "Open IDML", [], None,
+-            "{path | base64, name?} — opens an IDML package as a new document (linked images are read next to the file or from its Links/ folder; the fonts in a `Document Fonts` folder beside it load first) → {index, documentFonts, warnings: package parts missing, font files skipped}",
++            "{path | base64, name?} — opens an IDML package, or an InDesign document or template (.indd, .indt: converted to IDML first; its conversion warnings join `warnings`), as a new document (linked images are read next to the file or from its Links/ folder; the fonts in a `Document Fonts` folder beside it load first) → {index, documentFonts, warnings: conversion warnings, package parts missing, font files skipped}",
+             always, open_idml),
+     ]
+ }
+@@ -39,6 +40,15 @@ pub fn import(bytes: &[u8], dir: Option<&std::path::Path>) -> Result<Document> {
+ 
+ /// [`import`], with the problems that did not stop it (parts missing from the package, …).
+ pub fn import_report(bytes: &[u8], dir: Option<&std::path::Path>) -> Result<(Document, Vec<String>)> {
++    import_report_with_previews(bytes, dir, &std::collections::HashMap::new())
++}
++
++/// [`import_report`], showing `previews` (graphic `Self` → image) for linked files that can't be read.
++fn import_report_with_previews(
++    bytes: &[u8],
++    dir: Option<&std::path::Path>,
++    previews: &std::collections::HashMap<String, Vec<u8>>,
++) -> Result<(Document, Vec<String>)> {
+     #[cfg(not(target_arch = "wasm32"))]
+     let resolved = std::cell::RefCell::new(std::collections::HashMap::new());
+     let read = |link: &str| -> Option<Vec<u8>> {
+@@ -55,7 +65,7 @@ pub fn import_report(bytes: &[u8], dir: Option<&std::path::Path>) -> Result<(Doc
+         }
+     };
+     let designcraft_idml::Imported { document, warnings } =
+-        designcraft_idml::import_idml_report(bytes, &read).map_err(|e| EngineError::Other(e.to_string()))?;
++        designcraft_idml::import_idml_report_with_previews(bytes, &read, previews).map_err(|e| EngineError::Other(e.to_string()))?;
+     #[cfg(not(target_arch = "wasm32"))]
+     let document = {
+         let mut document = document;
+@@ -136,34 +146,72 @@ fn read_packaged_link(link: &str, dir: Option<&std::path::Path>) -> Option<(Stri
+ }
+ 
+ pub(crate) fn open_idml(s: &mut Session, p: &Value) -> Result<Value> {
+-    let (bytes, dir, name) = if let Some(b) = str_param(p, "base64") {
+-        (base64_decode(b), None, str_param(p, "name").map(|n| n.trim_end_matches(".idml").to_string()))
++    let (bytes, dir, file, title) = if let Some(b) = str_param(p, "base64") {
++        let name = str_param(p, "name").unwrap_or_default();
++        (base64_decode(b), None, name.to_string(), without_document_extension(name).to_string())
+     } else if let Some(path) = str_param(p, "path") {
+         #[cfg(not(target_arch = "wasm32"))]
+         let b = std::fs::read(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+         #[cfg(target_arch = "wasm32")]
+         let b: Vec<u8> = Vec::new();
+         let pp = std::path::Path::new(path);
+-        (b, pp.parent().map(|d| d.to_path_buf()), pp.file_stem().map(|n| n.to_string_lossy().to_string()))
++        let file = pp.file_name().map_or_else(|| path.to_string(), |n| n.to_string_lossy().to_string());
++        (b, pp.parent().map(|d| d.to_path_buf()), file, pp.file_stem().map(|n| n.to_string_lossy().to_string()).unwrap_or_default())
+     } else {
+         return Err(bad("file.openIdml", "missing `path` or `base64`"));
+     };
+-    let (mut d, mut warnings) = import_report(&bytes, dir.as_deref())?;
+-    if let Some(n) = name {
+-        d.title = n;
++    let mut warnings = Vec::new();
++    // InDesign's previews of linked graphics show while their files are missing (graphic `Self` →
++    // preview), as InDesign shows them.
++    let mut previews = std::collections::HashMap::new();
++    let bytes = if is_indd(&file, &bytes) {
++        let conversion = indd::convert(&bytes, &file).map_err(|e| EngineError::Other(format!("can't convert the InDesign file: {e}")))?;
++        warnings.extend(conversion.warnings.iter().map(|w| w.message().to_string()));
++        for p in conversion.previews {
++            for g in p.graphics {
++                previews.insert(g, p.data.clone());
++            }
++        }
++        conversion.idml
++    } else {
++        bytes
++    };
++    let (mut d, import_warnings) = import_report_with_previews(&bytes, dir.as_deref(), &previews)?;
++    warnings.extend(import_warnings);
++    if !title.is_empty() {
++        d.title = title;
+     }
+     let (fonts, faces, font_warnings) = match str_param(p, "path").filter(|_| str_param(p, "base64").is_none()) {
+         Some(path) => super::file::load_document_fonts(&mut d, path),
+         None => (None, 0, Vec::new()),
+     };
+     warnings.extend(font_warnings);
+-    // Never save over the .idml with the native format: the document starts unsaved.
++    // Never save over the .idml or .indd with the native format: the document starts unsaved.
+     let mut st = DocState::new(d, None);
+     st.fonts = fonts;
+     let i = s.add_document(st);
+     Ok(json!({"index": i, "documentFonts": faces, "warnings": warnings}))
+ }
+ 
++/// An InDesign document or template (.indd, .indt): known by its signature, or by its name when
++/// the bytes are something else (the converter then says why it can't read them).
++pub(crate) fn is_indd(name: &str, bytes: &[u8]) -> bool {
++    bytes.starts_with(&indd::header::SIGNATURE) || has_indd_extension(name)
++}
++
++pub(crate) fn has_indd_extension(name: &str) -> bool {
++    let n = name.to_ascii_lowercase();
++    n.ends_with(".indd") || n.ends_with(".indt")
++}
++
++/// `name` without a trailing .idml, .indd or .indt (any case).
++fn without_document_extension(name: &str) -> &str {
++    match name.rsplit_once('.') {
++        Some((stem, ext)) if ["idml", "indd", "indt"].iter().any(|e| ext.eq_ignore_ascii_case(e)) => stem,
++        _ => name,
++    }
++}
++
+ #[cfg(all(test, not(target_arch = "wasm32")))]
+ mod tests {
+     use std::sync::Arc;
+@@ -262,4 +310,30 @@ mod tests {
+         assert_eq!(*asset.data, png);
+         std::fs::remove_dir_all(dir).unwrap();
+     }
++
++    /// INDD routing without an InDesign file: bytes with the INDD signature (or an .indd/.indt
++    /// name) go to the converter, and what it can't read is an open error that adds no document.
++    #[test]
++    fn indd_files_go_through_the_converter_and_its_errors_are_open_errors() {
++        let mut signed = indd::header::SIGNATURE.to_vec();
++        signed.resize(4096, 0);
++        let cases = [(signed, "Brochure"), (vec![0; 4096], "Brochure.indd"), (b"not an InDesign file".to_vec(), "Template.INDT")];
++        let mut s = Session::new();
++        for (bytes, name) in &cases {
++            let e = s.execute("file.openBytes", &json!({"name": name, "base64": base64_encode(bytes)})).unwrap_err().to_string();
++            assert!(e.contains("can't convert the InDesign file"), "{name}: {e}");
++        }
++        let dir = std::env::temp_dir().join(format!("dc-indd-open-{}", std::process::id()));
++        std::fs::create_dir_all(&dir).unwrap();
++        let path = dir.join("Brochure.indd");
++        std::fs::write(&path, vec![0u8; 64]).unwrap();
++        let e = s.execute("file.open", &json!({"path": path.to_string_lossy()})).unwrap_err().to_string();
++        assert!(e.contains("can't convert the InDesign file"), "{e}");
++        assert!(s.documents().is_empty());
++        std::fs::remove_dir_all(dir).unwrap();
++        // Anything else keeps its own route.
++        assert!(!is_indd("Brochure.idml", b"PK"));
++        assert_eq!(without_document_extension("Brochure.INDD"), "Brochure");
++        assert_eq!(without_document_extension("notes.txt"), "notes.txt");
++    }
+ }
+diff --git a/crates/idml/src/import.rs b/crates/idml/src/import.rs
+index 1a4fa65e..d97fb34d 100644
+--- a/crates/idml/src/import.rs
++++ b/crates/idml/src/import.rs
+@@ -62,6 +62,17 @@ pub struct Imported {
+ 
+ /// Import with a custom reader for linked files, reporting the problems that did not stop it.
+ pub fn import_idml_report(bytes: &[u8], read_link: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<Imported> {
++    import_idml_report_with_previews(bytes, read_link, &HashMap::new())
++}
++
++/// [`import_idml_report`], with stand-in images for graphics whose file neither the package nor
++/// `read_link` provides: `previews` maps a graphic's `Self` to an image (an InDesign document's
++/// screen preview of a linked file). The graphic keeps its link, so relinking replaces it.
++pub fn import_idml_report_with_previews(
++    bytes: &[u8],
++    read_link: &dyn Fn(&str) -> Option<Vec<u8>>,
++    previews: &HashMap<String, Vec<u8>>,
++) -> Result<Imported> {
+     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| IdmlError::NotIdml(e.to_string()))?;
+     let mut files: HashMap<String, Vec<u8>> = HashMap::new();
+     // Normalised part name → entry name, first entry wins (zip order, so the choice is stable).
+@@ -105,7 +116,7 @@ pub fn import_idml_report(bytes: &[u8], read_link: &dyn Fn(&str) -> Option<Vec<u
+             top.push(c.clone());
+         }
+     }
+-    let mut im = Importer::new(read_link);
++    let mut im = Importer::new(read_link, previews);
+     im.run(&root, &top)?;
+     let document = im.finish(&root).map_err(|e| match e {
+         // Without its spread parts there is nothing to open: say which parts were missing.
+@@ -159,6 +170,8 @@ struct ItemCtx {
+ 
+ struct Importer<'r> {
+     read_link: &'r dyn Fn(&str) -> Option<Vec<u8>>,
++    /// Graphic `Self` → stand-in image for a linked file that can't be read.
++    previews: &'r HashMap<String, Vec<u8>>,
+     next_id: u64,
+     settings: DocSettings,
+     default_margins: Option<(Margins, Columns)>,
+@@ -262,7 +275,7 @@ fn tint(v: Option<f64>) -> Option<f32> {
+ }
+ 
+ impl<'r> Importer<'r> {
+-    fn new(read_link: &'r dyn Fn(&str) -> Option<Vec<u8>>) -> Self {
++    fn new(read_link: &'r dyn Fn(&str) -> Option<Vec<u8>>, previews: &'r HashMap<String, Vec<u8>>) -> Self {
+         let specials: Vec<Swatch> = designcraft_color::default_swatches().into_iter().filter(|s| s.locked).collect();
+         let mut swatch_names = HashMap::new();
+         swatch_names.insert("Swatch/None".to_string(), swatch::NONE.to_string());
+@@ -274,6 +287,7 @@ impl<'r> Importer<'r> {
+         styles.paragraph.iter_mut().for_each(|s| s.based_on = None);
+         Importer {
+             read_link,
++            previews,
+             next_id: 0,
+             settings: DocSettings::default(),
+             default_margins: None,
+@@ -2348,6 +2362,12 @@ impl<'r> Importer<'r> {
+                 read_from = Some(p.clone());
+             }
+         }
++        // A linked file that can't be read shows the document's preview of it, if it has one.
++        if data.is_empty()
++            && let Some(preview) = g.get("Self").and_then(|s| self.previews.get(s))
++        {
++            data = preview.clone();
++        }
+         let (mime, px) = sniff_image(&data);
+         let mime = mime.map(str::to_string).unwrap_or_else(|| match link.and_then(|k| k.get("LinkResourceFormat")).unwrap_or("") {
+             f if f.contains("JPEG") => "image/jpeg".into(),
+diff --git a/crates/idml/src/lib.rs b/crates/idml/src/lib.rs
+index 0526070d..949b8ad4 100644
+--- a/crates/idml/src/lib.rs
++++ b/crates/idml/src/lib.rs
+@@ -49,7 +49,7 @@ mod xml;
+ mod tests;
+ 
+ pub use export::{ExportOptions, export_idml, export_idml_with};
+-pub use import::{Imported, import_idml, import_idml_report, import_idml_with};
++pub use import::{Imported, import_idml, import_idml_report, import_idml_report_with_previews, import_idml_with};
+ 
+ /// The IDML package mimetype (content of the first, stored `mimetype` entry).
+ pub const MIMETYPE: &str = "application/vnd.adobe.indesign-idml-package";
+diff --git a/crates/idml/src/tests.rs b/crates/idml/src/tests.rs
+index 57801e34..c21e146e 100644
+--- a/crates/idml/src/tests.rs
++++ b/crates/idml/src/tests.rs
+@@ -2169,3 +2169,19 @@ fn frame_preference_property_color_resolves_for_frames_and_object_styles() {
+     assert_eq!(colors, vec!["Near", "Near", "Far", designcraft_color::swatch::NONE]);
+     assert_eq!(d.styles.object_style("Child").unwrap().text_frame.as_ref().unwrap().column_rule_color, "Near");
+ }
++
++#[test]
++fn missing_linked_graphics_show_their_preview_and_keep_their_link() {
++    // InDesign's preview of the missing photo (a PNG header is all the importer reads: 4 × 3).
++    let png: Vec<u8> = [b"\x89PNG\r\n\x1a\n".as_slice(), &[0, 0, 0, 13], b"IHDR", &4u32.to_be_bytes(), &3u32.to_be_bytes()].concat();
++    let previews = std::collections::HashMap::from([("im".to_string(), png.clone())]);
++    let d = crate::import_idml_report_with_previews(&fixture(), &|_| None, &previews).unwrap().document;
++    let img = d.spreads.iter().flat_map(|sp| sp.items.iter()).find(|i| i.graphic().is_some()).unwrap();
++    let a = &d.assets[&img.graphic().unwrap().asset];
++    assert_eq!(a.data.as_slice(), png.as_slice(), "the preview shows");
++    assert_eq!(a.mime, "image/png");
++    assert_eq!(a.link.as_deref(), Some("/definitely/missing dir/photo.jpg"), "relinking still finds the file");
++    // Without a preview it stays empty, as before.
++    let d = import_idml(&fixture()).unwrap();
++    assert!(d.assets.values().all(|a| a.data.is_empty() || a.link.is_none()));
++}
+diff --git a/crates/ui-egui/src/lib.rs b/crates/ui-egui/src/lib.rs
+index 1db2f591..c7d5a9e1 100644
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -1364,11 +1364,11 @@ impl DesignApp {
+     }
+ }
+ 
+-/// Files that open as documents (when dropped or picked) rather than being placed: DesignCraft
+-/// and IDML.
++/// Files that open as documents (when dropped or picked) rather than being placed: DesignCraft,
++/// IDML, and InDesign documents and templates (converted to IDML on open).
+ pub fn opens_as_document(name: &str) -> bool {
+     let n = name.to_ascii_lowercase();
+-    [".designcraft", ".idml"].iter().any(|ext| n.ends_with(ext))
++    [".designcraft", ".idml", ".indd", ".indt"].iter().any(|ext| n.ends_with(ext))
+ }
+ 
+ pub fn now_ms() -> f64 {
+@@ -1994,10 +1994,10 @@ mod tests {
+ 
+     #[test]
+     fn dropped_documents_open_and_the_rest_is_placed() {
+-        for name in ["a.designcraft", "B.IDML"] {
++        for name in ["a.designcraft", "B.IDML", "c.indd", "D.INDT"] {
+             assert!(opens_as_document(name), "{name}");
+         }
+-        for name in ["a.png", "b.pdf", "idml.txt", "c.idml.zip"] {
++        for name in ["a.png", "b.pdf", "idml.txt", "c.idml.zip", "e.indd.zip"] {
+             assert!(!opens_as_document(name), "{name}");
+         }
+     }
+@@ -2026,6 +2026,18 @@ mod tests {
+         assert_eq!(alert(&app), ("Can't Place the File".to_string(), e));
+     }
+ 
++    #[test]
++    fn a_dropped_indd_file_the_converter_rejects_alerts() {
++        let path = unreadable_file("brochure.indd");
++        let mut app = DesignApp::new(Session::new(), Services::default());
++        let r = app.open_dropped(&path.to_string_lossy());
++        let _ = std::fs::remove_file(&path);
++        let e = r.unwrap_err();
++        assert!(e.contains("InDesign file"), "{e}");
++        assert_eq!(alert(&app), ("Can't Open the File".to_string(), e));
++        assert!(app.session.documents().is_empty());
++    }
++
+     #[test]
+     fn file_open_failures_show_an_alert() {
+         let path = unreadable_file("open.designcraft");
