@@ -8,6 +8,18 @@ This is a patched application build, not an Adobe plugin. It installs as **Desig
 
 Experimental. Source patch prepared; native application tests and installer builds are in progress. No complete cross-platform validation is claimed. Install only artifacts attached to a successful build/release. The download page only offers assets that actually exist in the release.
 
+## Malayalam FML display compatibility
+
+The patch resolves unsupported nonbreaking separators (U+2011) and curly quotation marks through the existing punctuation slots of legacy FML fonts. This removes missing-glyph boxes and the extra widths those boxes introduce. The original story text, UTF-8 offsets, line-breaking characters and existing encoded Malayalam conjuncts (including “ണ്ട”) are preserved. Fonts with their own glyphs and Unicode Malayalam fonts keep their original mappings.
+
+The matching licensed FML fonts must already be installed or provided in the document’s `Document Fonts` folder. This is not a legacy-to-Unicode conversion, a font replacement, or a guarantee of identical text flow.
+
+## MalayalamPatch (irajeev)
+
+Place the Type tool cursor inside a text frame, then open **Type → MalayalamPatch (irajeev)…**. Choose **Manglish** or **InScript**, type in the input box, review the live preview and click **Insert Malayalam** (Ctrl/Cmd+Enter). Enter adds a line. One Undo removes the insertion. Selected text is replaced; surrounding formatting is preserved.
+
+Manglish uses deterministic, case-sensitive spelling: `namaskaaram` → നമസ്കാരം, `malayaaLam` → മലയാളം, `uNTu` → ഉണ്ടു. Use `T D N L R` for retroflex letters; `aa ee oo` for long vowels. It is not predictive transliteration. InScript uses the standard Malayalam keyboard positions; `vcmdkejx` produces നമസ്കാരം. Noto Sans Malayalam is bundled for new Unicode text. Existing legacy FML text is not converted. Typeit! is not required and its source is not included.
+
 ## Installation
 
 Download the matching file from [Releases](https://github.com/heatcoder/designcraft-indd-patch/releases).
@@ -28,15 +40,19 @@ Requires Git, Python 3, Rust **1.95.0**, and native platform development tools. 
 
 ```sh
 python3 scripts/prepare.py
+export CRAFT_FONTS_DIR="$PWD/fonts"
+export CRAFT_FONTS_REQUIRED=1
 cd build/designcraft
 cargo build --release --locked -p designcraft -p designcraft-cli
+cargo test --release --locked -p designcraft-fonts legacy_fml
+cargo test --release --locked -p designcraft-engine malayalam
 cargo test --release --locked -p designcraft-engine indd
 cargo test --release --locked -p designcraft-idml missing_linked_graphics_show_their_preview_and_keep_their_link
 cd ../..
 python3 scripts/package.py --source build/designcraft --bin-dir build/designcraft/target/release
 ```
 
-On Windows use `python` instead of `python3`. Run the build natively on the target OS/processor. `upstream.json` pins the exact base and converter revisions; `prepare.py` verifies the patch applies before changing source.
+On Windows use `python` instead of `python3`, and set `CRAFT_FONTS_DIR` to the absolute `fonts` directory and `CRAFT_FONTS_REQUIRED=1` using PowerShell environment variables. Run the build natively on the target OS/processor. `upstream.json` pins the exact base and converter revisions; `prepare.py` verifies the patch applies before changing source.
 
 ## Automated installers
 

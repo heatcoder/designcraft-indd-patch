@@ -22,6 +22,8 @@ def copy(src,dst):
 def notices(dst):
     for f in ['LICENSE-MIT','LICENSE-APACHE','NOTICE.md']: copy(ROOT/f,dst/f)
     copy(ROOT/'README.md',dst/'README.md')
+    copy(ROOT/'fonts/OFL-NotoSansMalayalam.txt',dst/'OFL-NotoSansMalayalam.txt')
+    copy(ROOT/'fonts/README.md',dst/'Malayalam-font-source.md')
     for f in ['LICENSE-MIT','LICENSE-APACHE']:
         found=list((Path(os.environ.get('CARGO_HOME',Path.home()/'.cargo'))/'git/checkouts').glob('indd-utils-*/*/'+f))
         if found: copy(found[0],dst/('indd-utils-'+f))

@@ -51,6 +51,25 @@ index 0ec6540b..281325f1 100644
    No subscription, no licence server, no telemetry.
  - **Agent-native.** Every menu item, tool gesture, panel control and dialog can be driven over a
    JSON control channel and an **MCP server**, so Claude and other agents can lay out and edit
+diff --git a/ROADMAP.md b/ROADMAP.md
+index c60a0410..1c60da4a 100644
+--- a/ROADMAP.md
++++ b/ROADMAP.md
+@@ -126,6 +126,8 @@ list) · [roadmap.md](docs/roadmap.md) (milestones, plan) · [parity-checklist.m
+ 
+ ## Progress log
+ 
++- **2026-10-17 · independent iRajeev backport** · Direct INDD/INDT opening and embedded graphic previews, plus display-only compatibility for missing separators and quotation marks in legacy FML Malayalam fonts. Original text and encoded conjuncts are preserved. This experimental distribution does not change upstream readiness estimates.
++
+ Newest first.
+ 
+ - **2026-10-12** · Text threads by hand: click a selected text frame's in or out port to load
+@@ -209,3 +211,5 @@ Newest first.
+ | 2026-10-10 | major | Restructured to the progress-docs standard; full re-measure; the "Working today" inventory moved to docs/target-app-parity.md, milestones to docs/roadmap.md, the CLI/MCP section left to docs/agents.md (which already covered it) |
+ | 2026-10-04 | major | Parity estimate: breadth 99%, depth ~83%, ~170 h |
+ | 2026-10-01 | major | First roadmap: status, milestones |
++
++- Independent iRajeev distribution: Type → MalayalamPatch offers offline Manglish/InScript preview and Unicode insertion, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
 diff --git a/apps/designcraft-web/src/web.rs b/apps/designcraft-web/src/web.rs
 index fe7cca4a..1ba0617a 100644
 --- a/apps/designcraft-web/src/web.rs
@@ -305,6 +324,524 @@ index 96498e86..b5fdfa5f 100644
 +        assert_eq!(without_document_extension("notes.txt"), "notes.txt");
 +    }
  }
+diff --git a/crates/engine/src/cmd/malayalam.rs b/crates/engine/src/cmd/malayalam.rs
+new file mode 100644
+index 00000000..83cf4d74
+--- /dev/null
++++ b/crates/engine/src/cmd/malayalam.rs
+@@ -0,0 +1,320 @@
++//! Independent offline Malayalam input. InScript key positions follow the published Microsoft
++//! Malayalam layout (KLID 0000044C); no Typeit! implementation is copied.
++use super::{CommandSpec, always, bad, cmd, has_text, str_param};
++use crate::{Result, Session};
++use serde_json::{Value, json};
++
++pub const FONT: &str = "Noto Sans Malayalam";
++pub const MAX_INPUT: usize = 16_384;
++
++pub fn specs() -> Vec<CommandSpec> {
++    vec![
++        cmd!(noundo "malayalam.convert", "Preview Malayalam", [], None, "{text, mode: manglish|inscript} → {text}; offline Unicode input", always, preview),
++        cmd!(
++            "malayalam.insert",
++            "Insert Malayalam",
++            [],
++            None,
++            "{text, mode: manglish|inscript} — insert at the text selection using Noto Sans Malayalam; one undo step",
++            has_text,
++            insert
++        ),
++    ]
++}
++
++pub fn convert(text: &str, mode: &str) -> std::result::Result<String, String> {
++    if text.len() > MAX_INPUT {
++        return Err("Please insert text in sections of at most 16 KB.".into());
++    }
++    match mode {
++        "inscript" => Ok(text.chars().map(inscript_key).collect()),
++        "manglish" => {
++            let mut out = String::new();
++            let mut word = String::new();
++            for c in text.chars() {
++                if c.is_ascii_alphabetic() {
++                    word.push(c);
++                } else {
++                    out.push_str(&phonetic_word(&word));
++                    word.clear();
++                    out.push(c);
++                }
++            }
++            out.push_str(&phonetic_word(&word));
++            Ok(out)
++        }
++        _ => Err("Choose Manglish or InScript.".into()),
++    }
++}
++
++// Functional keyboard mapping, independently transcribed from Microsoft's published layout:
++// https://learn.microsoft.com/en-us/globalization/keyboards/kbdinmal.html
++fn inscript_key(c: char) -> String {
++    match c {
++        '`' => "ൊ",
++        '~' => "ഒ",
++        '=' => "ൃ",
++        '+' => "ഋ",
++        '_' => "ഃ",
++        '#' => "്ര",
++        '^' => "ൿ",
++        '&' => "ക്ഷ",
++        '*' => "ൾ",
++        'q' => "ൗ",
++        'w' => "ൈ",
++        'e' => "ാ",
++        'r' => "ീ",
++        't' => "ൂ",
++        'y' => "ബ",
++        'u' => "ഹ",
++        'i' => "ഗ",
++        'o' => "ദ",
++        'p' => "ജ",
++        '[' => "ഡ",
++        ']' => "ർ",
++        'a' => "ോ",
++        's' => "േ",
++        'd' => "്",
++        'f' => "ി",
++        'g' => "ു",
++        'h' => "പ",
++        'j' => "ര",
++        'k' => "ക",
++        'l' => "ത",
++        ';' => "ച",
++        '\'' => "ട",
++        'z' => "െ",
++        'x' => "ം",
++        'c' => "മ",
++        'v' => "ന",
++        'b' => "വ",
++        'n' => "ല",
++        'm' => "സ",
++        '/' => "യ",
++        'Q' => "ഔ",
++        'W' => "ഐ",
++        'E' => "ആ",
++        'R' => "ഈ",
++        'T' => "ഊ",
++        'Y' => "ഭ",
++        'U' => "ങ",
++        'I' => "ഘ",
++        'O' => "ധ",
++        'P' => "ഝ",
++        '{' => "ഢ",
++        '}' => "ഞ",
++        'A' => "ഓ",
++        'S' => "ഏ",
++        'D' => "അ",
++        'F' => "ഇ",
++        'G' => "ഉ",
++        'H' => "ഫ",
++        'J' => "റ",
++        'K' => "ഖ",
++        'L' => "ഥ",
++        ':' => "ഛ",
++        '"' => "ഠ",
++        'Z' => "എ",
++        'X' => "ൺ",
++        'C' => "ണ",
++        'V' => "ൻ",
++        'B' => "ഴ",
++        'N' => "ള",
++        'M' => "ശ",
++        '<' => "ഷ",
++        '>' => "ൽ",
++        _ => return c.to_string(),
++    }
++    .to_string()
++}
++
++fn phonetic_word(word: &str) -> String {
++    // Longest spellings first. Uppercase retroflex letters are intentional, not case folding.
++    const VOWELS: &[(&str, &str, &str)] = &[
++        ("aa", "ആ", "ാ"),
++        ("ee", "ഈ", "ീ"),
++        ("oo", "ഊ", "ൂ"),
++        ("ai", "ഐ", "ൈ"),
++        ("au", "ഔ", "ൗ"),
++        ("a", "അ", ""),
++        ("A", "ആ", "ാ"),
++        ("i", "ഇ", "ി"),
++        ("I", "ഈ", "ീ"),
++        ("u", "ഉ", "ു"),
++        ("U", "ഊ", "ൂ"),
++        ("e", "എ", "െ"),
++        ("E", "ഏ", "േ"),
++        ("o", "ഒ", "ൊ"),
++        ("O", "ഓ", "ോ"),
++    ];
++    const CONS: &[(&str, &str)] = &[
++        ("ksh", "ക്ഷ"),
++        ("ng", "ങ"),
++        ("nj", "ഞ"),
++        ("zh", "ഴ"),
++        ("kh", "ഖ"),
++        ("gh", "ഘ"),
++        ("ch", "ച"),
++        ("Ch", "ഛ"),
++        ("jh", "ഝ"),
++        ("Th", "ഠ"),
++        ("Dh", "ഢ"),
++        ("th", "ത"),
++        ("dh", "ധ"),
++        ("ph", "ഫ"),
++        ("bh", "ഭ"),
++        ("sh", "ശ"),
++        ("Sh", "ഷ"),
++        ("k", "ക"),
++        ("g", "ഗ"),
++        ("c", "ച"),
++        ("j", "ജ"),
++        ("T", "ട"),
++        ("D", "ഡ"),
++        ("N", "ണ"),
++        ("t", "ത"),
++        ("d", "ദ"),
++        ("n", "ന"),
++        ("p", "പ"),
++        ("b", "ബ"),
++        ("m", "മ"),
++        ("y", "യ"),
++        ("r", "ര"),
++        ("l", "ല"),
++        ("v", "വ"),
++        ("w", "വ"),
++        ("S", "ശ"),
++        ("s", "സ"),
++        ("h", "ഹ"),
++        ("L", "ള"),
++        ("R", "റ"),
++        ("f", "ഫ"),
++    ];
++    let mut out = String::new();
++    let mut rest = word;
++    let mut pending = false;
++    while !rest.is_empty() {
++        if let Some((key, independent, sign)) = VOWELS.iter().find(|(k, _, _)| rest.starts_with(k)) {
++            if pending {
++                out.pop();
++                out.push_str(sign);
++            } else {
++                out.push_str(independent);
++            }
++            pending = false;
++            rest = rest.get(key.len()..).unwrap_or("");
++        } else if let Some((key, letter)) = CONS.iter().find(|(k, _)| rest.starts_with(k)) {
++            out.push_str(letter);
++            out.push('്');
++            pending = true;
++            rest = rest.get(key.len()..).unwrap_or("");
++        } else if let Some(c) = rest.chars().next() {
++            out.push(c);
++            pending = false;
++            rest = rest.get(c.len_utf8()..).unwrap_or("");
++        } else {
++            break;
++        }
++    }
++    if pending {
++        for (ending, chillu) in [("ന്", "ൻ"), ("ണ്", "ൺ"), ("ല്", "ൽ"), ("ള്", "ൾ"), ("ര്", "ർ"), ("മ്", "ം")] {
++            if let Some(prefix) = out.strip_suffix(ending) {
++                if !prefix.ends_with('്') && (!prefix.is_empty() || chillu != "ം") {
++                    out = format!("{prefix}{chillu}");
++                }
++                break;
++            }
++        }
++    }
++    out
++}
++
++fn params(p: &Value) -> Result<String> {
++    let text = str_param(p, "text").ok_or_else(|| bad("malayalam.convert", "missing text"))?;
++    convert(text, str_param(p, "mode").unwrap_or("manglish")).map_err(|e| bad("malayalam.convert", e))
++}
++fn preview(_: &mut Session, p: &Value) -> Result<Value> {
++    Ok(json!({"text": params(p)?}))
++}
++fn insert(s: &mut Session, p: &Value) -> Result<Value> {
++    let text = params(p)?;
++    if text.trim().is_empty() {
++        return Err(bad("malayalam.insert", "Type some text first."));
++    }
++    if !designcraft_fonts::FontDb::global().has_family(FONT) {
++        return Err(bad("malayalam.insert", "Noto Sans Malayalam is missing. Install the complete MalayalamPatch build."));
++    }
++    super::text::insert(s, &json!({"text":text, "raw":true}))?;
++    s.edit(|doc, selection| {
++        let at = selection.text.ok_or_else(|| bad("malayalam.insert", "Place the text cursor in a frame first."))?;
++        let story = doc.text_story_mut(at.story, at.cell).ok_or(designcraft_doc::DocError::NoStory(at.story))?;
++        let start = at.focus.saturating_sub(text.len());
++        story.format_chars(start..at.focus, |f| {
++            f.over.font_family = Some(FONT.into());
++            f.over.font_style = Some("Regular".into());
++            f.over.language = Some("Malayalam".into());
++        });
++        Ok(json!({"text":text, "start":start, "end":at.focus, "font":FONT}))
++    })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn malayalam_manglish_words_conjuncts_and_punctuation() {
++        for (input, output) in [
++            ("namaskaaram", "നമസ്കാരം"),
++            ("malayaaLam", "മലയാളം"),
++            ("uNTu", "ഉണ്ടു"),
++            ("amma", "അമ്മ"),
++            ("avan", "അവൻ"),
++            ("ksha", "ക്ഷ"),
++            ("namaskaaram! 2026\nണ്ട", "നമസ്കാരം! 2026\nണ്ട"),
++        ] {
++            assert_eq!(convert(input, "manglish").unwrap(), output, "{input}");
++        }
++    }
++    #[test]
++    fn malayalam_inscript_keys_form_words_and_conjuncts() {
++        assert_eq!(convert("vcmdkejx", "inscript").unwrap(), "നമസ്കാരം");
++        assert_eq!(convert("Cd'", "inscript").unwrap(), "ണ്ട");
++        assert_eq!(convert("ണ്ട 2026\n", "inscript").unwrap(), "ണ്ട 2026\n");
++    }
++    #[test]
++    fn malayalam_input_is_bounded_and_rejects_unknown_modes() {
++        assert!(convert(&"a".repeat(MAX_INPUT + 1), "manglish").is_err());
++        assert!(convert("hello", "unknown").is_err());
++        assert_eq!(convert("", "manglish").unwrap(), "");
++    }
++    #[test]
++    fn malayalam_insert_preserves_surrounding_format_and_undoes_once() {
++        if designcraft_fonts::CRAFT_FONTS.is_empty() {
++            return;
++        }
++        let mut s = Session::new();
++        s.execute("file.new", &json!({})).unwrap();
++        let frame = s.execute("frame.create", &json!({"rect":[20,20,400,400],"content":"text","text":"Before OLD after"})).unwrap();
++        let sid = designcraft_doc::StoryId(frame["story"].as_u64().unwrap());
++        s.execute("text.select", &json!({"story":sid.0,"anchor":0,"focus":16})).unwrap();
++        s.execute("type.char", &json!({"attrs":{"fontFamily":"Source Sans 3","size":20}})).unwrap();
++        s.execute("text.select", &json!({"story":sid.0,"anchor":7,"focus":10})).unwrap();
++        let before = s.doc().unwrap().doc.clone();
++        let steps = s.doc().unwrap().history.undo.len();
++        s.execute("malayalam.insert", &json!({"text":"uNTu","mode":"manglish"})).unwrap();
++        let story = s.doc().unwrap().doc.story(sid).unwrap();
++        assert_eq!(story.text, "Before ഉണ്ടു after");
++        assert_eq!(story.char_format_at(7).over.font_family.as_deref(), Some(FONT));
++        assert_eq!(story.char_format_at(0), before.story(sid).unwrap().char_format_at(0));
++        assert_eq!(story.char_format_at(story.text.len() - 1), before.story(sid).unwrap().char_format_at(15));
++        assert_eq!(s.doc().unwrap().history.undo.len(), steps + 1);
++        s.execute("edit.undo", &json!({})).unwrap();
++        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().text, "Before OLD after");
++        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().char_format_at(7), before.story(sid).unwrap().char_format_at(7));
++        s.execute("edit.redo", &json!({})).unwrap();
++        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().text, "Before ഉണ്ടു after");
++        let text = s.doc().unwrap().doc.story(sid).unwrap().text.clone();
++        assert!(s.execute("malayalam.insert", &json!({"text":"test","mode":"invalid"})).is_err());
++        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().text, text);
++    }
++}
+diff --git a/crates/engine/src/cmd/mod.rs b/crates/engine/src/cmd/mod.rs
+index affe0712..845d0991 100644
+--- a/crates/engine/src/cmd/mod.rs
++++ b/crates/engine/src/cmd/mod.rs
+@@ -28,6 +28,7 @@ mod linked;
+ mod links;
+ mod liquid;
+ mod lists;
++pub mod malayalam;
+ mod mathexpr;
+ mod media;
+ mod notes;
+@@ -170,6 +171,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
+         v.extend(library::specs());
+         v.extend(lists::specs());
+         v.extend(linked::specs());
++        v.extend(malayalam::specs());
+         v.extend(mathexpr::specs());
+         v.extend(media::specs());
+         v.extend(pdflayers::specs());
+diff --git a/crates/engine/src/cmd/text.rs b/crates/engine/src/cmd/text.rs
+index 0b87820f..ace716d8 100644
+--- a/crates/engine/src/cmd/text.rs
++++ b/crates/engine/src/cmd/text.rs
+@@ -492,7 +492,7 @@ fn release(s: &mut Session, p: &Value) -> Result<Value> {
+     })
+ }
+ 
+-fn insert(s: &mut Session, p: &Value) -> Result<Value> {
++pub(crate) fn insert(s: &mut Session, p: &Value) -> Result<Value> {
+     let text = super::text_param(p, "text");
+     // Tab in a table cell moves to the next cell (Shift-Tab: `table.prevCell`).
+     if text == "\t" && s.doc()?.selection.text.is_some_and(|t| t.cell.is_some()) {
+diff --git a/crates/fonts/src/fontdb.rs b/crates/fonts/src/fontdb.rs
+index bc9c9e65..1ed09037 100644
+--- a/crates/fonts/src/fontdb.rs
++++ b/crates/fonts/src/fontdb.rs
+@@ -241,6 +241,30 @@ impl FontFace {
+     }
+     /// Does the face map `c` to a glyph?
+     pub fn covers(&self, c: char) -> bool {
++        self.raw_covers(self.shaping_char(c))
++    }
++
++    /// Legacy FML fonts put Malayalam glyphs in Latin slots. Their blank hyphen is also used
++    /// for the nonbreaking separator in imported documents. Resolve unsupported punctuation
++    /// for display only: editing offsets, saved text and line-breaking semantics stay intact.
++    pub(crate) fn shaping_char(&self, c: char) -> char {
++        let replacement = match c {
++            '\u{2011}' => '-',
++            '\u{2018}' | '\u{201C}' => '"',
++            '\u{2019}' | '\u{201D}' => '\'',
++            _ => return c,
++        };
++        if !self.family.get(..4).is_some_and(|s| s.eq_ignore_ascii_case("FML-"))
++            || self.raw_covers('\u{0D23}')
++            || self.raw_covers(c)
++            || !self.raw_covers(replacement)
++        {
++            return c;
++        }
++        replacement
++    }
++
++    fn raw_covers(&self, c: char) -> bool {
+         let cp = c as u32;
+         if cp < 0x1_0000 {
+             let bits = self.bmp.get_or_init(|| {
+@@ -311,7 +335,7 @@ impl FontFace {
+     }
+     /// Glyph id for `c` (0 = .notdef).
+     pub fn glyph_for(&self, c: char) -> u32 {
+-        self.skrifa().and_then(|f| f.charmap().map(c)).map(|g| g.to_u32()).unwrap_or(0)
++        self.skrifa().and_then(|f| f.charmap().map(self.shaping_char(c))).map(|g| g.to_u32()).unwrap_or(0)
+     }
+ 
+     /// GDEF identifies marks even when shaping merges their source cluster with a base.
+@@ -881,7 +905,8 @@ impl FontDb {
+     /// without `CRAFT_FONTS_DIR`), whose system font scan reads `font_dirs`.
+     pub fn with_font_dirs(font_dirs: Vec<std::path::PathBuf>) -> Self {
+         let mut faces = Vec::new();
+-        let craft = crate::japanese_document_fonts().into_iter().map(|f| f.bytes);
++        let craft =
++            crate::japanese_document_fonts().into_iter().chain(crate::CRAFT_FONTS.iter().filter(|f| f.scripts.contains(&"Mlym"))).map(|f| f.bytes);
+         for data in BUNDLED.iter().copied().chain(craft) {
+             for (i, family, style, coords) in enumerate_faces(data) {
+                 if let Some(f) = make_face(FontBytes::Static(data), FontSource::Bundled, i, family, style, coords) {
+diff --git a/crates/fonts/src/lib.rs b/crates/fonts/src/lib.rs
+index 5ff395df..4799a0b9 100644
+--- a/crates/fonts/src/lib.rs
++++ b/crates/fonts/src/lib.rs
+@@ -197,7 +197,7 @@ fn shape_dir(
+         let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
+         let mut buf = UnicodeBuffer::new();
+         for (i, c) in text.char_indices() {
+-            buf.add(map(c), i as u32);
++            buf.add(face.shaping_char(map(c)), i as u32);
+         }
+         buf.set_pre_context(context.before);
+         buf.set_post_context(context.after);
+@@ -230,7 +230,7 @@ fn shape_dir(
+         let cmap = f.charmap();
+         let gm = f.glyph_metrics(Size::unscaled(), face.location());
+         for (i, c) in text.char_indices() {
+-            let g = cmap.map(map(c)).unwrap_or_default();
++            let g = cmap.map(face.shaping_char(map(c))).unwrap_or_default();
+             let adv = gm.advance_width(g).unwrap_or(face.upem as f32 * 0.5);
+             out.push(ShapedGlyph {
+                 gid: g.to_u32(),
+@@ -259,7 +259,7 @@ pub fn shape_vertical(face: &FontFace, text: &str, features: &[Feature], map: im
+         let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
+         let mut buf = UnicodeBuffer::new();
+         for (i, c) in text.char_indices() {
+-            buf.add(map(c), i as u32);
++            buf.add(face.shaping_char(map(c)), i as u32);
+         }
+         buf.set_pre_context(context.before);
+         buf.set_post_context(context.after);
+@@ -287,7 +287,7 @@ pub fn shape_vertical(face: &FontFace, text: &str, features: &[Feature], map: im
+     {
+         let cmap = f.charmap();
+         for (i, c) in text.char_indices() {
+-            let gid = cmap.map(map(c)).unwrap_or_default().to_u32();
++            let gid = cmap.map(face.shaping_char(map(c))).unwrap_or_default().to_u32();
+             let (x, y) = funcs.origin(gid);
+             let adv = -(face.v_advance(gid).round() as i32);
+             out.push(ShapedGlyph {
+@@ -320,6 +320,42 @@ pub fn first_glyph(face: &FontFace, chars: &[char]) -> u32 {
+ mod tests {
+     use super::*;
+ 
++    #[test]
++    fn legacy_fml_punctuation_keeps_clusters_and_encoded_nda() {
++        let db = FontDb::with_font_dirs(Vec::new());
++        let mapping = [('-', '-'), ('"', '"'), ('\'', '\''), ('ï', 'X')];
++        db.add_font(testing::font_mapping("FML-TestLegacy", &mapping).unwrap());
++        let face = db.face("FML-TestLegacy", "Regular");
++        let text = "ï\u{2011}ï\u{201C}\u{2018}\u{201D}\u{2019}";
++        let glyphs = shape(&face, text, &[], |c| c);
++        assert_eq!(glyphs.len(), 7);
++        let expected = ['ï', '-', 'ï', '"', '"', '\'', '\''];
++        for ((g, (byte, c)), shown) in glyphs.iter().zip(text.char_indices()).zip(expected) {
++            assert_eq!(g.cluster, byte, "source offsets must survive display substitution");
++            assert!(face.covers(c));
++            assert_ne!(g.gid, 0);
++            assert_eq!(g.gid, face.glyph_for(shown));
++        }
++        assert_eq!(face.shaping_char('ï'), 'ï', "legacy nda must not become Unicode Malayalam");
++        let metrics = |text| shape(&face, text, &[], |c| c).into_iter().map(|g| (g.gid, g.x_advance, g.x_offset)).collect::<Vec<_>>();
++        assert_eq!(metrics("ï\u{2011}ï"), metrics("ï-ï"), "separator must not add a missing-glyph box's width");
++    }
++
++    #[test]
++    fn legacy_fml_aliases_do_not_override_real_glyphs_or_unicode_fonts() {
++        let db = FontDb::with_font_dirs(Vec::new());
++        for (name, map) in [
++            ("Other Legacy", vec![('-', '-')]),
++            ("FML-Unicode", vec![('-', '-'), ('ണ', 'X')]),
++            ("FML-HasHyphen", vec![('-', '-'), ('\u{2011}', 'Y')]),
++            ("FML-NoReplacement", vec![('a', 'X')]),
++        ] {
++            db.add_font(testing::font_mapping(name, &map).unwrap());
++            let face = db.face(name, "Regular");
++            assert_eq!(face.shaping_char('\u{2011}'), '\u{2011}', "{name}");
++        }
++    }
++
+     #[test]
+     fn arabic_script_runs_do_not_inherit_the_hebrew_shaper() {
+         use unicode_script::Script;
+@@ -559,4 +595,21 @@ mod tests {
+             }
+         }
+     }
++    #[test]
++    fn malayalam_bundled_font_shapes_conjuncts_without_system_fonts() {
++        if !CRAFT_FONTS.iter().any(|f| f.scripts.contains(&"Mlym")) {
++            return;
++        }
++        let db = FontDb::with_font_dirs(Vec::new());
++        db.set_system_fallback(false);
++        assert!(db.has_family("Noto Sans Malayalam"));
++        let face = db.face("Noto Sans Malayalam", "Regular");
++        assert_eq!(face.family, "Noto Sans Malayalam");
++        for text in ["നമസ്കാരം", "മലയാളം", "ഉണ്ടു", "ണ്ട", "ൻ"] {
++            let glyphs = shape(&face, text, &[], |c| c);
++            assert!(!glyphs.is_empty());
++            assert!(glyphs.iter().all(|g| g.gid != 0), "{text}");
++        }
++        assert!(shape(&face, "ണ്ട", &[], |c| c).len() < "ണ്ട".chars().count());
++    }
+ }
 diff --git a/crates/idml/src/import.rs b/crates/idml/src/import.rs
 index 1a4fa65e..d97fb34d 100644
 --- a/crates/idml/src/import.rs
@@ -412,6 +949,89 @@ index 57801e34..c21e146e 100644
 +    let d = import_idml(&fixture()).unwrap();
 +    assert!(d.assets.values().all(|a| a.data.is_empty() || a.link.is_none()));
 +}
+diff --git a/crates/ui-egui/src/dialogs.rs b/crates/ui-egui/src/dialogs.rs
+index a721fdd1..b98b5607 100644
+--- a/crates/ui-egui/src/dialogs.rs
++++ b/crates/ui-egui/src/dialogs.rs
+@@ -26,6 +26,7 @@ impl Dialog {
+                 "marginTop": "3p0", "marginBottom": "3p0", "marginInside": "3p0", "marginOutside": "3p0", "bleed": "0p0", "primaryTextFrame": false})
+             }
+             "goToPage" => json!({"page": "1"}),
++            "malayalam" => json!({"mode":"manglish", "text":""}),
+             "qrCode" => json!({"type": "url", "content": "https://", "color": "[Black]"}),
+             "insertTable" => json!({"bodyRows": 4, "columns": 4, "headerRows": 0, "footerRows": 0}),
+             "insertXref" => json!({"linkTo": "paragraph", "style": "", "target": "", "format": ""}),
+@@ -1141,6 +1142,7 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+         "menus" => crate::i18n::tr(&app.ui.language, "Menu Customization"),
+         "importOptions" => crate::i18n::tr(&app.ui.language, "Import Options"),
+         "fittingOptions" => crate::i18n::tr(&app.ui.language, "Frame Fitting Options"),
++        "malayalam" => "MalayalamPatch (irajeev)",
+         "qrCode" => crate::i18n::tr(&app.ui.language, "Generate QR Code"),
+         "preferences" => crate::i18n::tr(&app.ui.language, "Preferences"),
+         "print" => crate::i18n::tr(&app.ui.language, "Print"),
+@@ -1606,6 +1608,28 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+                     ui.end_row();
+                 });
+             }
++            "malayalam" => {
++                ui.set_min_width(440.0);
++                let mut mode = d.s("mode");
++                ui.horizontal(|ui| {
++                    ui.selectable_value(&mut mode, "manglish".into(), "Manglish");
++                    ui.selectable_value(&mut mode, "inscript".into(), "InScript");
++                });
++                d.fields.insert("mode".into(), json!(mode));
++                ui.label(if mode == "inscript" { "InScript keys: vcmdkejx → നമസ്കാരം; Cd' → ണ്ട" } else { "Examples: namaskaaram, malayaaLam, uNTu. Case matters: T D N L R." });
++                let mut text = d.s("text");
++                ui.add(egui::TextEdit::multiline(&mut text).desired_width(440.0).desired_rows(4).char_limit(4096).hint_text("Type here…"));
++                d.fields.insert("text".into(), json!(text));
++                ui.label("Malayalam preview");
++                match designcraft_engine::cmd::malayalam::convert(&text, &mode) {
++                    Ok(preview) => { ui.label(egui::RichText::new(preview).size(22.0)); }
++                    Err(error) => { ui.colored_label(egui::Color32::RED, error); }
++                }
++                ui.label("Inserts Unicode text with Noto Sans Malayalam. Ctrl/Cmd+Enter inserts; Enter adds a line.");
++                if app.session.active().and_then(|s| s.selection.text).is_none() {
++                    ui.label("Place the text cursor inside a text frame, then reopen this option to insert.");
++                }
++            }
+             "qrCode" => {
+                 let cur = d.s("type");
+                 ui.horizontal(|ui| {
+@@ -1704,16 +1728,18 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+         }
+         });
+         ui.add_space(12.0);
+-        let ok_label = if d.id == "closeDocument" { "  Save  " } else { "  OK  " };
++        let ok_label = if d.id == "closeDocument" { "  Save  " } else if d.id == "malayalam" { "Insert Malayalam" } else { "  OK  " };
++        let can_confirm = d.id != "malayalam" || (app.session.active().and_then(|s| s.selection.text).is_some() && !d.s("text").trim().is_empty());
+         ui.horizontal(|ui| {
+             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                 if ui
+-                    .add(
++                    .add_enabled(
++                        can_confirm,
+                         egui::Button::new(crate::rtl::widget(ui, egui::RichText::new(crate::i18n::tr(&app.ui.language, ok_label)).color(egui::Color32::WHITE)))
+                             .fill(crate::theme::Tokens::get(ui.ctx()).accent_strong),
+                     )
+                     .clicked()
+-                    || ui.input(|i| i.key_pressed(egui::Key::Enter))
++                    || (can_confirm && ui.input(|i| i.key_pressed(egui::Key::Enter) && (d.id != "malayalam" || i.modifiers.command)))
+                 {
+                     result = Some(true);
+                 }
+@@ -1755,6 +1781,11 @@ pub fn confirm(app: &mut DesignApp) -> Result<Value, String> {
+         app.cancel_pdf_import();
+     }
+     match d.id.as_str() {
++        "malayalam" => {
++            let result = app.run("malayalam.insert", json!({"text":d.s("text"), "mode":d.s("mode")}));
++            if result.is_err() { app.ui.dialog = Some(d); }
++            result
++        }
+         "newDocument" => {
+             let margins = json!({"top": d.m("marginTop").unwrap_or(36.0), "bottom": d.m("marginBottom").unwrap_or(36.0), "inside": d.m("marginInside").unwrap_or(36.0), "outside": d.m("marginOutside").unwrap_or(36.0)});
+             app.run(
 diff --git a/crates/ui-egui/src/lib.rs b/crates/ui-egui/src/lib.rs
 index 1db2f591..c7d5a9e1 100644
 --- a/crates/ui-egui/src/lib.rs
@@ -463,3 +1083,96 @@ index 1db2f591..c7d5a9e1 100644
      #[test]
      fn file_open_failures_show_an_alert() {
          let path = unreadable_file("open.designcraft");
+diff --git a/crates/ui-egui/src/menus.rs b/crates/ui-egui/src/menus.rs
+index dc8b88bf..f96ad254 100644
+--- a/crates/ui-egui/src/menus.rs
++++ b/crates/ui-egui/src/menus.rs
+@@ -29,6 +29,7 @@ pub const UI_COMMANDS: &[(&str, &str, Option<&str>, &str)] = &[
+     ("app.exportHtml", "Export HTML…", None, "{path?} — one self-contained web page"),
+     ("app.exportXml", "Export XML…", None, "{path?} — the tagged content"),
+     ("app.printBooklet", "Print Booklet…", None, "{path?} — saddle-stitched printer spreads as PDF"),
++    ("app.malayalam", "MalayalamPatch (irajeev)…", None, "{} — offline Manglish and InScript typing"),
+     ("app.qrCode", "Generate QR Code…", None, "{} — the QR Code dialog (object.qrCode does the work)"),
+     ("app.userDictionary", "User Dictionary…", None, "{} — hyphenation exceptions (hyphenation.* commands)"),
+     ("app.fittingOptions", "Frame Fitting Options…", None, "{} — the dialog for object.fittingOptions"),
+@@ -330,6 +331,7 @@ pub const MENUS: &[(&str, &[&str])] = &[
+     (
+         "Type",
+         &[
++            "ui:app.malayalam",
+             "ui:app.findFontDialog",
+             "-",
+             "cmd:type.createOutlines",
+@@ -875,6 +877,10 @@ pub fn run_ui(app: &mut DesignApp, id: &str, p: &Value) -> Option<Result<Value,
+             app.ui.dialog = Some(crate::dialogs::Dialog::new("userDictionary", json!({"word": ""})));
+             Ok(Value::Null)
+         }
++        "app.malayalam" => {
++            app.ui.dialog = Some(crate::dialogs::Dialog::new("malayalam", json!({})));
++            Ok(Value::Null)
++        }
+         "app.qrCode" => {
+             app.ui.dialog = Some(crate::dialogs::Dialog::new("qrCode", json!({})));
+             Ok(Value::Null)
+diff --git a/crates/ui-egui/src/theme.rs b/crates/ui-egui/src/theme.rs
+index 193abf34..d9c88fb8 100644
+--- a/crates/ui-egui/src/theme.rs
++++ b/crates/ui-egui/src/theme.rs
+@@ -280,8 +280,9 @@ fn font_definitions(craft: &'static [designcraft_fonts::CraftFont], lang: &str)
+     japanese.sort_by_key(|f| (f.family != "BIZ UDPGothic", f.style != "Regular"));
+     let chinese = pick("Hans");
+     let arabic = pick("Arab");
++    let malayalam = pick("Mlym");
+     let name = |f: &designcraft_fonts::CraftFont| format!("craft-{}-{}", f.family, f.style);
+-    for f in japanese.iter().chain(&chinese).chain(&arabic) {
++    for f in japanese.iter().chain(&chinese).chain(&arabic).chain(&malayalam) {
+         add(&mut fonts, &name(f), f.bytes);
+     }
+     // Han characters take the forms of the interface language: Chinese faces first for zh.
+@@ -293,7 +294,7 @@ fn font_definitions(craft: &'static [designcraft_fonts::CraftFont], lang: &str)
+             ja.sort_by_key(|f| (f.family != "BIZ UDPGothic", f.style != "Bold"));
+         }
+         let (first, second) = if zh { (&chinese, &ja) } else { (&ja, &chinese) };
+-        stack.extend(first.iter().chain(second).chain(&arabic).map(|f| name(f)));
++        stack.extend(first.iter().chain(second).chain(&arabic).chain(&malayalam).map(|f| name(f)));
+     }
+     // Arabic runs (rtl.rs): the Arabic face first, so letters and spaces shape as one run.
+     for family in ["arabic", "arabic-semibold"] {
+diff --git a/docs/file-format-parity.md b/docs/file-format-parity.md
+index 06f59de9..4c8ebbca 100644
+--- a/docs/file-format-parity.md
++++ b/docs/file-format-parity.md
+@@ -1,6 +1,6 @@
+ # File format parity
+ 
+-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-13 · **Change:** minor (content-indexed asset deduplication, #727) · **Target:** Adobe InDesign 2026 (21.6)
++> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-17 · **Change:** independent INDD and legacy FML compatibility backport · **Target:** Adobe InDesign 2026 (21.6)
+ 
+ Every format InDesign 2026 reads or writes, with DesignCraft's support, fidelity and tests. The
+ InDesign list comes from its bundle's `Info.plist` (`CFBundleDocumentTypes`,
+@@ -8,8 +8,12 @@ InDesign list comes from its bundle's `Info.plist` (`CFBundleDocumentTypes`,
+ the open/place/export filters in `apps/designcraft/src/main.rs` and the `file.*` commands.
+ Overall numbers: [target-app-parity.md](target-app-parity.md); open problems: [gaps.md](gaps.md).
+ 
+-**Dimension score: ~40% ready (estimated), 150–250 h + 20–60 h for INDD integration.** The
+-single largest gap is that `.indd` can't be opened.
++**Upstream baseline estimate: ~40% ready, 150–250 h + 20–60 h for INDD integration.**
++The independent iRajeev backport adds experimental direct `.indd`/`.indt` opening through
++the pinned indd-utils converter; the upstream readiness estimates above have not been reassessed.
++Legacy FML font display resolves unsupported nonbreaking separators and curly quotes to the
++font's own punctuation slots, without rewriting story text or changing encoded Malayalam conjuncts.
++Original fonts, linked images and layout review are still required; INDD writing is unsupported.
+ 
+ Read/Write: **✓** supported · **~** partial · **✗** missing · **—** InDesign doesn't either.
+ Weight: what share of an InDesign professional's file traffic the format carries (used for the
+@@ -19,8 +23,8 @@ score below).
+ 
+ | Format | Ext | InDesign | DesignCraft read | DesignCraft write | Fidelity / tests | Weight |
+ |---|---|---|---|---|---|---|
+-| InDesign document | `.indd` | read/write (native) | ✗ (#21; converters proposed in #98, #114) | ✗ | — | 30% |
+-| InDesign template | `.indt` | read/write | ✗ | ✗ | — | 2% |
++| InDesign document | `.indd` | read/write (native) | ~ (iRajeev backport, indd-utils) | ✗ | Synthetic routing and font compatibility regressions; local real-file review | 30% |
++| InDesign template | `.indt` | read/write | ~ (same converter) | ✗ | Case-insensitive routing regression | 2% |
+ | InDesign Markup | `.idml` | read/write | ✓ | ✓ | Synthetic fixtures in `crates/idml/src/tests.rs` (49 tests); exported files verified by opening in InDesign 2026 by hand; indd-utils' 98-document run imports 811 spreads / 2,866 stories / 5,812 items. Open: #193, #338, #339, #340, #211. No real-file corpus test | 20% |
+ | DesignCraft native | `.designcraft` | — | ✓ | ✓ | zip + JSON, versioned; round-trip tests. Asset loading and compaction index by content hash, then confirm byte equality; equal-sized distinct files no longer all share one search bucket (#727). Separate links, MIME types and PDF pages retain their identity | — |
+ | InDesign book | `.indb` | read/write | ✗ (own `.dcbook`) | ✗ | Books are shallow (see gaps.md) | 2% |
