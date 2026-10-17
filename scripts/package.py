@@ -76,10 +76,12 @@ elif system=='Windows':
     stage=work/'payload'; stage.mkdir()
     for name in ['designcraft.exe','designcraft-cli.exe']: copy(bins/name,stage/name)
     notices(stage/'Notices')
-    compiler=shutil.which('ISCC') or r'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+    # Prefer the real installation over Chocolatey's PATH shim. Notices live beside ISCC.
+    candidates=[Path(r'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'),Path(r'C:\Program Files\Inno Setup 6\ISCC.exe')]
+    compiler=str(next((f for f in candidates if f.is_file()), Path(shutil.which('ISCC') or 'ISCC.exe')))
     compiler_root=Path(compiler).parent
     licence_files=[f for f in compiler_root.rglob('*') if f.is_file() and f.suffix.lower() in ('.txt','.rtf','.html') and any(word in f.name.lower() for word in ('license','licence','copying','copyright'))]
-    if not licence_files: raise SystemExit('Inno Setup runtime licence files missing')
+    if not licence_files: raise SystemExit(f'Inno Setup runtime licence files missing beside {compiler}; files: {[f.name for f in compiler_root.iterdir()]}')
     for f in licence_files: copy(f,stage/'Notices/InnoSetup'/f.relative_to(compiler_root))
     version=subprocess.run([compiler,'/?'],capture_output=True,text=True,encoding="utf-8",errors="replace").stdout
     (stage/'Notices/InnoSetup/compiler-version.txt').write_text(version, encoding='utf-8')
