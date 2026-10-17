@@ -61,6 +61,9 @@ jobs:
       - name: Missing image preview regression test
         working-directory: build/designcraft
         run: cargo test --release --locked -p designcraft-idml missing_linked_graphics_show_their_preview_and_keep_their_link
+      - name: Quit recovery regression tests
+        working-directory: build/designcraft
+        run: cargo test --release --locked -p designcraft exit_recovery
       - name: Package installer
         run: python scripts/package.py --source build/designcraft --bin-dir build/designcraft/target/release
       - uses: actions/upload-artifact@v4

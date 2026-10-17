@@ -52,7 +52,7 @@ index 0ec6540b..281325f1 100644
  - **Agent-native.** Every menu item, tool gesture, panel control and dialog can be driven over a
    JSON control channel and an **MCP server**, so Claude and other agents can lay out and edit
 diff --git a/ROADMAP.md b/ROADMAP.md
-index c60a0410..1c60da4a 100644
+index c60a0410..84e8f56d 100644
 --- a/ROADMAP.md
 +++ b/ROADMAP.md
 @@ -126,6 +126,8 @@ list) · [roadmap.md](docs/roadmap.md) (milestones, plan) · [parity-checklist.m
@@ -64,12 +64,13 @@ index c60a0410..1c60da4a 100644
  Newest first.
  
  - **2026-10-12** · Text threads by hand: click a selected text frame's in or out port to load
-@@ -209,3 +211,5 @@ Newest first.
+@@ -209,3 +211,6 @@ Newest first.
  | 2026-10-10 | major | Restructured to the progress-docs standard; full re-measure; the "Working today" inventory moved to docs/target-app-parity.md, milestones to docs/roadmap.md, the CLI/MCP section left to docs/agents.md (which already covered it) |
  | 2026-10-04 | major | Parity estimate: breadth 99%, depth ~83%, ~170 h |
  | 2026-10-01 | major | First roadmap: status, milestones |
 +
 +- Independent iRajeev distribution: Type → MalayalamPatch offers offline Manglish/InScript preview and Unicode insertion, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
++- iRajeev macOS build: exit after synchronous recovery/settings preservation to avoid AppKit Touch Bar observer teardown crash.
 diff --git a/apps/designcraft-web/src/web.rs b/apps/designcraft-web/src/web.rs
 index fe7cca4a..1ba0617a 100644
 --- a/apps/designcraft-web/src/web.rs
@@ -93,10 +94,22 @@ index fe7cca4a..1ba0617a 100644
              wasm_bindgen_futures::spawn_local(async move {
                  let Some(file) = dialog.pick_file().await else {
 diff --git a/apps/designcraft/src/main.rs b/apps/designcraft/src/main.rs
-index 2ac607bb..c5a83505 100644
+index 2ac607bb..feb662ee 100644
 --- a/apps/designcraft/src/main.rs
 +++ b/apps/designcraft/src/main.rs
-@@ -191,9 +191,10 @@ fn open_filters(purpose: &str) -> &'static [OpenFilter] {
+@@ -69,6 +69,11 @@ impl eframe::App for App {
+             eprintln!("designcraft: couldn't preserve documents on exit: {e}");
+         }
+         save_prefs(&self.app);
++        // AppKit Touch Bar KVO can throw after AccessKit restores the content view's class
++        // during window teardown. Recovery and settings are complete; exit before eframe
++        // destroys that view inside the native display loop. Startup errors never reach here.
++        #[cfg(target_os = "macos")]
++        std::process::exit(0);
+     }
+ }
+ 
+@@ -191,9 +196,10 @@ fn open_filters(purpose: &str) -> &'static [OpenFilter] {
              OpenFilter { name: "Video and sound", extensions: &["mp4", "m4v", "mov", "webm", "mp3", "m4a", "wav", "ogg"] },
          ],
          _ => &[
@@ -108,7 +121,7 @@ index 2ac607bb..c5a83505 100644
          ],
      }
  }
-@@ -383,7 +384,9 @@ mod tests {
+@@ -383,7 +389,9 @@ mod tests {
          assert!(place.len() > 1, "the place dialog keeps a filter for each kind of file");
          assert!(place.iter().any(|filter| filter.extensions.contains(&"png")));
          let documents = super::open_filters("");
@@ -326,7 +339,7 @@ index 96498e86..b5fdfa5f 100644
  }
 diff --git a/crates/engine/src/cmd/malayalam.rs b/crates/engine/src/cmd/malayalam.rs
 new file mode 100644
-index 00000000..83cf4d74
+index 00000000..0c0a3972
 --- /dev/null
 +++ b/crates/engine/src/cmd/malayalam.rs
 @@ -0,0 +1,320 @@
@@ -636,7 +649,7 @@ index 00000000..83cf4d74
 +        s.execute("malayalam.insert", &json!({"text":"uNTu","mode":"manglish"})).unwrap();
 +        let story = s.doc().unwrap().doc.story(sid).unwrap();
 +        assert_eq!(story.text, "Before ഉണ്ടു after");
-+        assert_eq!(story.char_format_at(7).over.font_family.as_deref(), Some(FONT));
++        assert_eq!(story.char_format_at(10).over.font_family.as_deref(), Some(FONT));
 +        assert_eq!(story.char_format_at(0), before.story(sid).unwrap().char_format_at(0));
 +        assert_eq!(story.char_format_at(story.text.len() - 1), before.story(sid).unwrap().char_format_at(15));
 +        assert_eq!(s.doc().unwrap().history.undo.len(), steps + 1);

@@ -20,6 +20,8 @@ Place the Type tool cursor inside a text frame, then open **Type → MalayalamPa
 
 Manglish uses deterministic, case-sensitive spelling: `namaskaaram` → നമസ്കാരം, `malayaaLam` → മലയാളം, `uNTu` → ഉണ്ടു. Use `T D N L R` for retroflex letters; `aa ee oo` for long vowels. It is not predictive transliteration. InScript uses the standard Malayalam keyboard positions; `vcmdkejx` produces നമസ്കാരം. Noto Sans Malayalam is bundled for new Unicode text. Existing legacy FML text is not converted. Typeit! is not required and its source is not included.
 
+The macOS build also exits after preserving recovery data and settings to avoid a Touch Bar window-teardown crash.
+
 ## Installation
 
 Download the matching file from [Releases](https://github.com/heatcoder/designcraft-indd-patch/releases).
