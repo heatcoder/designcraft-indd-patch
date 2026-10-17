@@ -1,0 +1,10 @@
+5a6c5016cb81b97b2fdb9c34751046a2dd33dba0f81f0ca0cd98913ed458e4cb  irajeev-designcraft-indd-0.8.0-irajeev.4-linux-aarch64.deb
+552308b259389106397d2449675c7987ad37d27762ed9e1ffab4379b1f69855d  irajeev-designcraft-indd-0.8.0-irajeev.4-linux-aarch64.tar.gz
+bff9ff8ad074c8cf0ef831da4970a108a8b195a886b64b258af2e57912ba8344  irajeev-designcraft-indd-0.8.0-irajeev.4-linux-x86_64.deb
+ea31b96a1ffba2632ee05cdfd4a5f08dfe1e151262406ea5d17daf4a088a64cd  irajeev-designcraft-indd-0.8.0-irajeev.4-linux-x86_64.tar.gz
+c12c0a9c6312184fabdd291a7c0576a869cd9140ff086e873a67176435ac2838  irajeev-designcraft-indd-0.8.0-irajeev.4-macos-aarch64.pkg
+9b9a5687fea5a8c4e39a06a524bd518352f10394a5ae28efc5ee444ae0c6dd9a  irajeev-designcraft-indd-0.8.0-irajeev.4-macos-aarch64.zip
+52befec91ceb616f88624f10e8ea6d14a16e06cef2a95e663c99b38c822ee8be  irajeev-designcraft-indd-0.8.0-irajeev.4-macos-x86_64.pkg
+f81c7dc2bc25dcc4f573bcd7ddeb98289f58b3dc88942710318532bc25a90109  irajeev-designcraft-indd-0.8.0-irajeev.4-macos-x86_64.zip
+96ce041ba861e044a5c3c458e91775ef73e0c01bc946fe276f639fb64f465d34  irajeev-designcraft-indd-0.8.0-irajeev.4-windows-aarch64.exe
+427332ae17920658b4c699223049f6db41098e793b1b9397e4251f608c579dec  irajeev-designcraft-indd-0.8.0-irajeev.4-windows-x86_64.exe

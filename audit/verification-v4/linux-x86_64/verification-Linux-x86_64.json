@@ -1,0 +1,34 @@
+{
+  "platform": "Linux",
+  "architecture": "x86_64",
+  "result": "PASS",
+  "scope": "Extracted native installer and portable archive match staged files; source artwork checks; approved external font input; forbidden loose payload files; exact notice archive. Does not establish legal chain of title or exhaustive binary decompilation.",
+  "files": {
+    "usr/share/applications/irajeev-designcraft.desktop": "583faa4c2e0f990a4498b1a5a5616353aa9190da0fce85eec5f5e96d6be7bd21",
+    "usr/share/icons/hicolor/256x256/apps/irajeev-designcraft.png": "4c64e26db27f44a93fcb5a3a7508628611a8b8365480bd3d7c749425f2da8263",
+    "opt/irajeev-designcraft/designcraft-cli": "5a480e1707387214134bf60d04f0a0b7115339200e7de1ec6de16ac8ab529665",
+    "opt/irajeev-designcraft/designcraft": "dc10c9fb9bcdd1de72bb230b6cbeeec7262d85297e5ec14bbf3b7d28f19b7f7c",
+    "opt/irajeev-designcraft/Notices/LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+    "opt/irajeev-designcraft/Notices/LICENSE-MIT": "d543d31e3120c64b70abc77cfadcbdc2249c78de1c8efa2e3d62540bb79de816",
+    "opt/irajeev-designcraft/Notices/release-status.json": "187e02da43bf589be07de8712484719ca0b3cae6b53bb9b067a96ff6bdbb55b4",
+    "opt/irajeev-designcraft/Notices/indd-utils-LICENSE-MIT": "03515604e5c375d2c2973c4dfe9c2f3b8ee2a505be92926066d5d613bd4a38a0",
+    "opt/irajeev-designcraft/Notices/PROVENANCE.md": "689ddea2421b2fededa30cb20a99214034ee1be8288ec602074e79a8d76291a4",
+    "opt/irajeev-designcraft/Notices/AUDIT.md": "b61bbf0750c3c0d8a9a81dd7ba20af3083ef6c0e00764223510de027c4e0818f",
+    "opt/irajeev-designcraft/Notices/indd-utils-LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+    "opt/irajeev-designcraft/Notices/notice-sources.json": "a27019bd506be073a83d3cf2278812c0e9d408abdefec0b1b1234ca5911423c9",
+    "opt/irajeev-designcraft/Notices/dependencies.csv": "52fa662b7ee9e65f50ab3a9746f38541f5c07d852c992b6dc0963b1ee06bd82c",
+    "opt/irajeev-designcraft/Notices/OFL-NotoSansMalayalam.txt": "1df18163a0bf60f02131401ba1609df90051f40c4047684dda1c8a2e9586f7f2",
+    "opt/irajeev-designcraft/Notices/DesignCraft-icon-LICENSE.txt": "eb3f3cfc6437fd370e31ca8449c7312314c191d15347bd70934d9ce2df5331bd",
+    "opt/irajeev-designcraft/Notices/DesignCraft-NOTICE.txt": "59da5d57095806a032148fb768b257b90f9f2de89171d7c3f6c48bf4fea7258e",
+    "opt/irajeev-designcraft/Notices/NOTICE.md": "007e101471edab00f9ea314ab711f520ad4e19047a0f0796a0301b5760c0edb3",
+    "opt/irajeev-designcraft/Notices/THIRD-PARTY-NOTICES.txt": "5c0e7ce8f61e1c27de54f419042d0c03aa53a98b534af058e4d6f6db31881b90",
+    "opt/irajeev-designcraft/Notices/Malayalam-font-source.md": "b742852bc271144992a1de373dcab59b6b74bd786fa7b85dfce4dfef9d147f89",
+    "opt/irajeev-designcraft/Notices/TYPEIT-EXCLUSION.json": "c496d053a8d4035e5f59f4bdc6d6c8305378c68fae47fc9e1ca814c1ee985f98",
+    "opt/irajeev-designcraft/Notices/README.md": "c30ddb6af7b058d7a9cb143b2b80c22f57a2a28c9aede9876015abef3df187f1"
+  },
+  "packages": {
+    "irajeev-designcraft-indd-0.8.0-irajeev.4-linux-x86_64.tar.gz": "ea31b96a1ffba2632ee05cdfd4a5f08dfe1e151262406ea5d17daf4a088a64cd",
+    "irajeev-designcraft-indd-0.8.0-irajeev.4-linux-x86_64.deb": "bff9ff8ad074c8cf0ef831da4970a108a8b195a886b64b258af2e57912ba8344"
+  },
+  "cli": "/home/runner/work/designcraft-indd-patch/designcraft-indd-patch/build/package-Linux-x86_64/verification/deb/opt/irajeev-designcraft/designcraft-cli"
+}

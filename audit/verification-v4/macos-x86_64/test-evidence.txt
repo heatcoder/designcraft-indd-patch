@@ -1,0 +1,36 @@
+2026-10-17T06:51:23.9482460Z test tests::legacy_fml_punctuation_keeps_clusters_and_encoded_nda ... ok
+2026-10-17T06:51:23.9483700Z test tests::legacy_fml_aliases_do_not_override_real_glyphs_or_unicode_fonts ... ok
+2026-10-17T06:51:23.9485000Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+2026-10-17T06:51:24.2317030Z test tests::malayalam_bundled_font_shapes_conjuncts_without_system_fonts ... ok
+2026-10-17T06:51:24.2327320Z test fontdb::tests_fallback::malayalam_takes_a_font_made_for_it ... ok
+2026-10-17T06:51:24.2329830Z test fontdb::tests_fallback::malayalam_fonts_load_from_the_font_folders_when_first_needed ... ok
+2026-10-17T06:51:24.2331940Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 55 filtered out; finished in 0.00s
+2026-10-17T06:58:56.7511610Z test cmd::malayalam::tests::malayalam_input_is_bounded_and_rejects_unknown_modes ... ok
+2026-10-17T06:58:56.7514660Z test cmd::malayalam::tests::malayalam_inscript_keys_form_words_and_conjuncts ... ok
+2026-10-17T06:58:56.7516390Z test cmd::malayalam::tests::malayalam_manglish_words_conjuncts_and_punctuation ... ok
+2026-10-17T06:58:56.7562700Z test cmd::malayalam::tests::malayalam_insert_preserves_surrounding_format_and_undoes_once ... ok
+2026-10-17T06:58:56.7567750Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 427 filtered out; finished in 0.01s
+2026-10-17T07:07:54.2394060Z test malayalam::tests::direct_malayalam_composes_replaces_backspaces_and_stops_after_navigation ... ok
+2026-10-17T07:07:54.2398200Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 226 filtered out; finished in 0.01s
+2026-10-17T07:07:55.4523070Z test i18n::tests::japanese_vertical_type_commands_are_translated ... ok
+2026-10-17T07:07:55.4532050Z test i18n::tests::pdf_export_dialog_strings_are_translated ... ok
+2026-10-17T07:07:55.4534890Z test i18n::tests::ukrainian_counts_use_category_captions_for_every_number ... ok
+2026-10-17T07:07:55.4536690Z test i18n::tests::ukrainian_catalog_covers_existing_keys_and_preserves_placeholders ... ok
+2026-10-17T07:07:55.4540490Z test i18n::tests::cached_lookup_preserves_every_translation_across_language_switches ... ok
+2026-10-17T07:07:55.4594500Z test i18n::tests::translates_known_strings_and_keeps_the_rest ... ok
+2026-10-17T07:07:55.4596220Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 221 filtered out; finished in 0.01s
+2026-10-17T07:07:56.2173300Z test cmd::interchange::tests::indd_files_go_through_the_converter_and_its_errors_are_open_errors ... ok
+2026-10-17T07:07:56.2175270Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 430 filtered out; finished in 0.00s
+2026-10-17T07:09:58.1046800Z test tests::missing_linked_graphics_show_their_preview_and_keep_their_link ... ok
+2026-10-17T07:09:58.1047980Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 78 filtered out; finished in 0.00s
+2026-10-17T07:10:06.5769540Z test exit_recovery_tests::exit_recovery_reports_unavailable_or_failed_storage_without_changing_documents ... ok
+2026-10-17T07:10:06.7949820Z test exit_recovery_tests::exit_recovery_removes_stale_data_after_undo_to_saved_state ... ok
+2026-10-17T07:10:06.8210940Z test exit_recovery_tests::exit_recovery_preserves_latest_dirty_document_without_mutating_it ... ok
+2026-10-17T07:10:06.9500940Z test exit_recovery_tests::exit_recovery_respects_complete_incomplete_stale_and_new_document_quit_plans ... ok
+2026-10-17T07:10:06.9502440Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 37 filtered out; finished in 0.38s
+2026-10-17T07:10:30.8678200Z 	/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
+2026-10-17T07:10:30.8690180Z 	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+2026-10-17T07:10:32.9180280Z PASS extracted installer verification
+2026-10-17T07:10:33.7139290Z PASS extracted CLI real INDD import, Malayalam insertion/replacement, undo/redo, InScript conversion. UI event tests run separately.
+2026-10-17T07:10:41.3521670Z SHA256 digest of uploaded artifact zip is e9bafaed51053d591cc03503056355ff00857b24e3ff8c75529f7cab6ac863e9
+2026-10-17T07:10:41.5588400Z Artifact irajeev-macos-x86_64.zip successfully finalized. Artifact ID 12093741013

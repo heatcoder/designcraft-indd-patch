@@ -112,3 +112,8 @@ The previously missed `r-efi` notices were found in each published crate’s `AU
 Candidate `.3` changes the publisher to Heatcoder. The Malayalam (irajeev) menu name and irajeev.com website remain product identities. TYPEIT-EXCLUSION.json records a repeat exclusion check; final installers reject hashes of all 49 local Typeit! files. Earlier `.2` build results do not validate the changed `.3` packages.
 
 Candidate `.4` additionally removes unused promotional translation rows and the macOS native Help menu label. The verifier scans the compiled GUI for the removed promotional phrases; plain author attribution remains. `.3` installers are superseded by this correction.
+
+
+## Final candidate `.4` verification
+
+All six fresh platform jobs passed extraction/payload checks and extracted-app INDD/Malayalam tests. The Intel Mac app also passed native GUI keyboard-event checks and was installed locally. See [VERIFICATION.md](VERIFICATION.md) for exact scope, source/run identifiers and limitations, and [CI-SHA256SUMS.txt](CI-SHA256SUMS.txt) for installer hashes. Earlier statements requiring final artifact checks are satisfied to that documented scope, not as a complete binary/SBOM or full upstream quality-gate audit. Public downloads remain paused for the dispatch upstream notice and historical provenance review. No Typeit implementation is included; publisher is Heatcoder.

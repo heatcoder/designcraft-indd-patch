@@ -1,0 +1,37 @@
+2026-10-17T06:43:57.2414638Z test tests::legacy_fml_punctuation_keeps_clusters_and_encoded_nda ... ok
+2026-10-17T06:43:57.2420092Z test tests::legacy_fml_aliases_do_not_override_real_glyphs_or_unicode_fonts ... ok
+2026-10-17T06:43:57.2420746Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+2026-10-17T06:43:57.3867643Z test tests::malayalam_bundled_font_shapes_conjuncts_without_system_fonts ... ok
+2026-10-17T06:43:57.3871417Z test fontdb::tests_fallback::malayalam_takes_a_font_made_for_it ... ok
+2026-10-17T06:43:57.3881197Z test fontdb::tests_fallback::malayalam_fonts_load_from_the_font_folders_when_first_needed ... ok
+2026-10-17T06:43:57.3881836Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 55 filtered out; finished in 0.00s
+2026-10-17T06:46:44.9638877Z test cmd::malayalam::tests::malayalam_manglish_words_conjuncts_and_punctuation ... ok
+2026-10-17T06:46:44.9639437Z test cmd::malayalam::tests::malayalam_inscript_keys_form_words_and_conjuncts ... ok
+2026-10-17T06:46:44.9640770Z test cmd::malayalam::tests::malayalam_input_is_bounded_and_rejects_unknown_modes ... ok
+2026-10-17T06:46:44.9644788Z test cmd::malayalam::tests::malayalam_insert_preserves_surrounding_format_and_undoes_once ... ok
+2026-10-17T06:46:44.9645560Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 427 filtered out; finished in 0.00s
+2026-10-17T06:49:39.7184050Z test malayalam::tests::direct_malayalam_composes_replaces_backspaces_and_stops_after_navigation ... ok
+2026-10-17T06:49:39.7184684Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 226 filtered out; finished in 0.00s
+2026-10-17T06:49:39.9785892Z test i18n::tests::pdf_export_dialog_strings_are_translated ... ok
+2026-10-17T06:49:39.9790103Z test i18n::tests::cached_lookup_preserves_every_translation_across_language_switches ... ok
+2026-10-17T06:49:39.9790977Z test i18n::tests::japanese_vertical_type_commands_are_translated ... ok
+2026-10-17T06:49:39.9791861Z test i18n::tests::ukrainian_catalog_covers_existing_keys_and_preserves_placeholders ... ok
+2026-10-17T06:49:39.9798946Z test i18n::tests::ukrainian_counts_use_category_captions_for_every_number ... ok
+2026-10-17T06:49:39.9814322Z test i18n::tests::translates_known_strings_and_keeps_the_rest ... ok
+2026-10-17T06:49:39.9815425Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 221 filtered out; finished in 0.00s
+2026-10-17T06:49:40.1968170Z test cmd::interchange::tests::indd_files_go_through_the_converter_and_its_errors_are_open_errors ... ok
+2026-10-17T06:49:40.1968805Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 430 filtered out; finished in 0.00s
+2026-10-17T06:50:08.2741483Z test tests::missing_linked_graphics_show_their_preview_and_keep_their_link ... ok
+2026-10-17T06:50:08.2742079Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 78 filtered out; finished in 0.00s
+2026-10-17T06:50:15.6955613Z test exit_recovery_tests::exit_recovery_reports_unavailable_or_failed_storage_without_changing_documents ... ok
+2026-10-17T06:50:15.7013437Z test exit_recovery_tests::exit_recovery_removes_stale_data_after_undo_to_saved_state ... ok
+2026-10-17T06:50:15.7045879Z test exit_recovery_tests::exit_recovery_preserves_latest_dirty_document_without_mutating_it ... ok
+2026-10-17T06:50:15.7239450Z test exit_recovery_tests::exit_recovery_respects_complete_incomplete_stale_and_new_document_quit_plans ... ok
+2026-10-17T06:50:15.7240587Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 37 filtered out; finished in 0.03s
+2026-10-17T06:51:01.0465385Z 	libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffe2bb1a0000)
+2026-10-17T06:51:01.0465807Z 	libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ffe2bb100000)
+2026-10-17T06:51:01.0466187Z 	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffe2baf50000)
+2026-10-17T06:51:02.1254373Z PASS extracted installer verification
+2026-10-17T06:51:02.6543850Z PASS extracted CLI real INDD import, Malayalam insertion/replacement, undo/redo, InScript conversion. UI event tests run separately.
+2026-10-17T06:51:05.1295520Z SHA256 digest of uploaded artifact zip is 885eaac5832b440dcd4c420fe24204643d258ae79927bb61a1e6aa6df22e1bbc
+2026-10-17T06:51:05.3479809Z Artifact irajeev-linux-aarch64.zip successfully finalized. Artifact ID 12092863218
