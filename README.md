@@ -6,7 +6,7 @@ This is a patched application build, not an Adobe plugin. It installs as **Desig
 
 ## Status
 
-Experimental. Source patch prepared; native application tests and installer builds are in progress. No complete cross-platform validation is claimed. Install only artifacts attached to a successful build/release. The download page only offers assets that actually exist in the release.
+Experimental. Install only artifacts attached to a successful build/release. The native workflow checks INDD import, image previews, FML mappings, bundled Malayalam shaping, typing/Undo and quit recovery before packaging. These targeted automated checks are not exhaustive application testing or a guarantee of identical layouts. Interactive verification was performed on an Intel Mac; no Windows or Linux desktop UI verification is claimed. The download page only offers assets that actually exist in the release.
 
 ## Malayalam FML display compatibility
 
