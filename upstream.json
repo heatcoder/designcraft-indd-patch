@@ -7,7 +7,7 @@
     "a7c3e330ec626bfe8fba670d450d540b3d862831",
     "82ffb692fccfbea83e0482693ed6aae597594387"
   ],
-  "patch_version": "0.8.0-irajeev.3",
+  "patch_version": "0.8.0-irajeev.4",
   "website": "https://irajeev.com",
   "local_changes": [
     "Display-only legacy FML separator and quotation-mark compatibility; original encoded text preserved",

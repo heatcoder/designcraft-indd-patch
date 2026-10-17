@@ -1,4 +1,4 @@
-name: Build iRajeev installers
+name: Build Heatcoder installers
 on:
   workflow_dispatch:
     inputs:
@@ -60,6 +60,9 @@ jobs:
       - name: Direct page input regression tests
         working-directory: build/designcraft
         run: cargo test --release --locked -p designcraft-ui-egui direct_malayalam
+      - name: Translation catalog regression tests
+        working-directory: build/designcraft
+        run: cargo test --release --locked -p designcraft-ui-egui i18n::tests
       - name: INDD routing regression tests
         working-directory: build/designcraft
         run: cargo test --release --locked -p designcraft-engine indd
@@ -103,4 +106,4 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           find installers -name SHA256SUMS.txt -exec cat {} + > SHA256SUMS.txt
-          gh release create "$GITHUB_REF_NAME" --prerelease --title "irajeev.com — DesignCraft INDD patch $GITHUB_REF_NAME" --notes "Experimental independent patch. Review fonts, images and layout after importing. Unsigned installers; see repository installation instructions." SHA256SUMS.txt $(find installers -type f ! -name SHA256SUMS.txt)
+          gh release create "$GITHUB_REF_NAME" --prerelease --title "Heatcoder — DesignCraft INDD patch $GITHUB_REF_NAME" --notes "Experimental independent patch. Review fonts, images and layout after importing. Unsigned installers; see repository installation instructions." SHA256SUMS.txt $(find installers -type f ! -name SHA256SUMS.txt)

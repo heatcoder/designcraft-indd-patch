@@ -45,6 +45,11 @@ else:
 typeit_hashes=set(json.loads((root/'audit/TYPEIT-EXCLUSION.json').read_text(encoding='utf-8'))['excluded_file_sha256'])
 assert not typeit_hashes.intersection(inventory.values()),'Typeit file detected in payload'
 assert 'Heatcoder' in (notices/'NOTICE.md').read_text(encoding='utf-8'),'Publisher notice missing'
+gui = binary.with_name('DesignCraft' if system == 'Darwin' else ('designcraft.exe' if system == 'Windows' else 'designcraft'))
+gui_bytes=gui.read_bytes()
+assert b'MalayalamPatch by Heatcoder' in gui_bytes,'Publisher string missing from compiled GUI'
+for phrase in [b'Join the ArtCraft community',b'Join the ArtCraft Discord',b'More ArtCraft apps',b'Part of the ArtCraft suite']:
+ assert phrase not in gui_bytes,('Promotional branding in compiled GUI',phrase)
 excluded={x['sha256'] for x in json.loads((root/'audit/excluded-brand-assets.json').read_text(encoding='utf-8'))}
 assert not excluded.intersection(inventory.values()),'Restricted artwork file detected'
 for path in inventory:

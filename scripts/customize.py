@@ -4,6 +4,7 @@ Uses source markers rather than redistributing the removed vector outline in a p
 """
 from pathlib import Path
 import shutil
+import re
 
 def customize(source: Path):
     p=source/'crates/ui-egui/src/about.rs'
@@ -39,4 +40,25 @@ pub fn paint_mark(ui: &egui::Ui, rect: Rect, color: Color32) {
     c=chrome.read_text(encoding='utf-8').replace('Join the ArtCraft community','Independent DesignCraft build').replace('Get help, share your layouts and shape what we build next.','MalayalamPatch by Heatcoder. Based on open-source DesignCraft.').replace('Join our Discord','Upstream community').replace('discord_button(ui, "Discord", vec2(78.0, 22.0))','discord_button(ui, "Upstream", vec2(90.0, 22.0))')
     chrome.write_text(c, encoding='utf-8')
     menus=source/'crates/ui-egui/src/menus.rs'
+    finish_branding(source)
     menus.write_text(menus.read_text(encoding='utf-8').replace('Join the ArtCraft Discord…','Upstream community…').replace('ArtCraft Website…','Upstream website…').replace('ArtCraft App Page…','Upstream app page…'), encoding='utf-8')
+
+
+def finish_branding(source: Path):
+    # Remove unused promotional translation rows, preserving attribution outside these tables.
+    catalogs=[source/'crates/ui-egui/src/i18n.rs',*(source/'crates/ui-egui/src/i18n').glob('*.rs')]
+    for p in catalogs:
+        s=p.read_text(encoding='utf-8')
+        marker='const TABLE:'
+        if marker not in s: continue
+        start=s.index('= &[',s.index(marker))+4
+        end=s.index('\n];',start)
+        rows=re.split(r'(?m)(?=^    \()',s[start:end])
+        s=s[:start]+''.join(row for row in rows if 'artcraft' not in row.lower())+s[end:]
+        p.write_text(s,encoding='utf-8')
+    p=source/'apps/designcraft/src/native_menu.rs'
+    p.write_text(p.read_text(encoding='utf-8').replace('Join the ArtCraft Discord…','Upstream community…'),encoding='utf-8')
+    p=source/'crates/ui-egui/src/chrome.rs'
+    p.write_text(p.read_text(encoding='utf-8').replace('("getartcraft.com", "help.website")','("Upstream website", "help.website")'),encoding='utf-8')
+    p=source/'crates/engine/src/cmd/inspect.rs'
+    p.write_text(p.read_text(encoding='utf-8').replace('(ArtCraft Discord, website, DesignCraft page and repository)','(upstream community, website, DesignCraft page and repository)'),encoding='utf-8')
