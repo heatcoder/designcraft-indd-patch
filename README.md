@@ -2,9 +2,13 @@
 
 A free enhancement for DesignCraft, adding INDD opening and Malayalam typing. Published by **Heatcoder**, built on open-source projects; credits and licences are included.
 
-**Downloads are temporarily paused while release checks are completed.** See [release notes](site/indd/release-notes.html) and the [technical audit](audit/AUDIT.md) for details.
+**Downloads are temporarily paused while release checks are completed.** See [release notes](https://heatcoder.github.io/designcraft-indd-patch/release-notes.html) and the [technical audit](audit/AUDIT.md) for details.
 
 This is a patched application build, not an Adobe plugin. The installers update the existing **DesignCraft** app and back up replaced files. Close DesignCraft before installing. Open `.indd` or `.indt` with **File → Open**, drag and drop, or the command line. Conversion happens locally and in memory. Save edits as `.designcraft` or export `.idml`; INDD writing is not supported.
+
+## Project website
+
+[Heatcoder website](https://heatcoder.github.io/designcraft-indd-patch/) — hosted with GitHub Pages. Source, documentation and build workflows live in this repository. Review builds are stored as GitHub Actions artifacts; approved public installers will be published in GitHub Releases. Public downloads remain paused.
 
 ## Status
 
