@@ -39,3 +39,6 @@ jobs:
           path: |
             build/package-*/verification/install.log
             dist/upgrade-install.log
+
+# Verify the checksum-corrected Heatcoder banner.
+
