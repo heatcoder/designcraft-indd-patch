@@ -60,7 +60,7 @@ The Cargo inventory is not the whole licence inventory. These also matter:
 | Spanish and Portuguese hyphenation | hypher embedded pattern data: Spanish MIT; Portuguese BSD 3-Clause | Include the full pattern notices in DesignCraft NOTICE, not just hypher's crate licence. |
 | ArtCraft name/marks | **Not open source**, `docs/brand/LICENSE-brand.txt` | Modified distributions must remove marks and avoid endorsement. The earlier app painted the mark in code. Current source replaces it with neutral “DC” text and describes the build as independent. Verify final binaries and source packages contain no restricted mark assets. Plain attribution to the ArtCraft team is retained. |
 | DesignCraft cat app icon | Separately declared MIT OR Apache-2.0 in assets/app-icon/LICENSE.txt | Distinct from the restricted ArtCraft mark; preserve its notice. |
-| Heatcoder publisher identity / iRajeev product branding | Branding for this modified DesignCraft build. | Publisher identity is distinct from upstream component authorship. Trademark ownership and rights to any externally sourced logo assets were outside this audit’s verification scope. |
+| Heatcoder publisher identity and product branding | Branding for this modified DesignCraft build. | Publisher identity is distinct from upstream component authorship. Trademark ownership and rights to any externally sourced logo assets were outside this audit’s verification scope. |
 | Windows Inno Setup installer runtime | Inno Setup licence; preserve existing copyright/web addresses; bundled subcomponents have additional terms | Do not remove runtime acknowledgements. Pin and inventory the actual compiler version and inspect final EXE notices; current hosted-runner installation is not version-pinned. |
 | Rust standard libraries/compiler support | MIT/Apache terms and Rust's own third-party notices | Version 1.95.0 pinned; compiler is a build tool, but linked standard/compiler-support code must be considered. Collect the toolchain's notices and compare final link outputs. |
 | Host operating-system frameworks and shared libraries | macOS frameworks, Windows system DLLs, Linux distro libraries under their respective terms | Referenced system dependencies are not automatically bundled. Verify `otool -L`, PE imports and `ldd` on final artifacts. If shipping extra DLLs/shared objects, add their exact versions/licences and any source obligations. |
@@ -109,7 +109,7 @@ The previously missed `r-efi` notices were found in each published crate’s `AU
 
 ## Heatcoder publisher update
 
-Candidate `.3` changes the publisher to Heatcoder. The Malayalam (irajeev) menu name and irajeev.com website remain product identities. TYPEIT-EXCLUSION.json records a repeat exclusion check; final installers reject hashes of all 49 local Typeit! files. Earlier `.2` build results do not validate the changed `.3` packages.
+Candidate `.3` changes the publisher to Heatcoder. The earlier product label was retained at that stage; candidate `.5` replaces it with Malayalam (Heatcoder). TYPEIT-EXCLUSION.json records a repeat exclusion check; final installers reject hashes of all 49 local Typeit! files. Earlier `.2` build results do not validate the changed `.3` packages.
 
 Candidate `.4` additionally removes unused promotional translation rows and the macOS native Help menu label. The verifier scans the compiled GUI for the removed promotional phrases; plain author attribution remains. `.3` installers are superseded by this correction.
 

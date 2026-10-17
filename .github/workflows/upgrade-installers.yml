@@ -61,6 +61,9 @@ jobs:
           r=json.loads(next(pathlib.Path('dist').glob('verification-*.json')).read_text())
           subprocess.run(['python','scripts/smoke_packaged.py','--cli',r['cli'],'--work','build/smoke'],check=True)
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: heatcoder-upgrade-${{ matrix.name }}
-          path: dist/*
+          path: |
+            dist/*
+            build/package-*/verification/install.log

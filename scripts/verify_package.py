@@ -38,7 +38,11 @@ elif system=='Linux':
  portable=review/'portable';portable.mkdir();run('tar','-xzf',next(out.glob('*.tar.gz')),'-C',portable);compare(expected/'usr/lib/heatcoder-designcraft',portable)
 else:
  expected=stage/'payload';expanded=review/'installed';installer=next(out.glob('*.exe'))
- run(installer,'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',f'/DIR={expanded}',f'/LOG={review / "install.log"}')
+ try:run(installer,'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',f'/DIR={expanded}',f'/LOG={review / "install.log"}')
+ except subprocess.CalledProcessError:
+  log=review/'install.log'
+  print(log.read_text(encoding='utf-8-sig',errors='replace') if log.exists() else 'No installer log created',flush=True)
+  raise
  inventory=compare(expected,expanded,('unins*.exe','unins*.dat'));binary=expanded/'designcraft-cli.exe';notices=expanded/'Notices'
  # Record imports if Visual Studio dumpbin is available on this runner.
  dumpbin=shutil.which('dumpbin')

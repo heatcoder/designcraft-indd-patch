@@ -36,7 +36,7 @@ These independent builds are unsigned/not notarized unless the release explicitl
 
 Keep your original document. Compare page breaks, text, styles and images before relying on the import for production. Missing linked graphics may show embedded low-resolution previews: relink the originals before printing. Use the original fonts where licensed and available. Place `Links` and `Document Fonts` beside the INDD document when possible.
 
-To remove the patched edition, remove its application on macOS, use Installed apps on Windows, or uninstall `irajeev-designcraft-indd` on Debian/Ubuntu. The original DesignCraft installation remains separate.
+To remove the patched edition, remove its application on macOS, use Installed apps on Windows, or uninstall `designcraft` on Debian/Ubuntu. A previous version can be restored from the saved rollback copy.
 
 ## Build locally
 
@@ -66,7 +66,7 @@ Run **Actions → Build Heatcoder installers → Run workflow**. The workflow bu
 
 `site/indd/` is a static page intended for `/indd/` on an existing website. Upload only this directory's contents into the site's `indd` directory. Do not upload the whole source checkout or development archives into public web storage.
 
-The page detects desktop OS and, where the browser exposes it, processor architecture. It looks up the exact release `v0.8.0-irajeev.1` and starts one matching download after a cancellable countdown. It asks for processor confirmation when detection is uncertain. Browsers can require a manual click. Unpublished/failed builds, mobile devices and unknown architectures never trigger a mismatched download.
+The page detects desktop OS and, where the browser exposes it, processor architecture. It looks up the exact release the reviewed release configured in `site/indd/download.js` and starts one matching download after a cancellable countdown. It asks for processor confirmation when detection is uncertain. Browsers can require a manual click. Unpublished/failed builds, mobile devices and unknown architectures never trigger a mismatched download.
 
 ## Credits and licensing
 

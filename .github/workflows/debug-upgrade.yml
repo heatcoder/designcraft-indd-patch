@@ -1,0 +1,41 @@
+name: Diagnose Windows upgrade installer
+on:
+  push:
+    paths: ['.github/workflows/debug-upgrade.yml', 'scripts/debug_windows_installer.py']
+  workflow_dispatch:
+permissions: {contents: read, actions: read}
+jobs:
+  debug:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-11-arm, name: windows-aarch64}
+          - {os: windows-2025, name: windows-x86_64}
+    runs-on: ${{ matrix.os }}
+    env: {PYTHONUTF8: '1'}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: irajeev-${{ matrix.name }}
+          run-id: 39010614389
+          github-token: ${{ github.token }}
+          path: incoming
+      - name: Prepare source
+        run: python scripts/prepare.py
+      - name: Compiler
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')) { choco install innosetup --yes --no-progress }
+      - name: Diagnose packaging using previous reviewed binaries (not release artifacts)
+        run: python scripts/debug_windows_installer.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostics-${{ matrix.name }}
+          path: |
+            build/package-*/verification/install.log
+            dist/upgrade-install.log
