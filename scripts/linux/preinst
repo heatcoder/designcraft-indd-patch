@@ -11,7 +11,7 @@ done
 mkdir -p "$base"
 saved=$(mktemp -d "$base/upgrade-$(date +%Y%m%d-%H%M%S)-XXXXXX")
 chmod 755 "$saved"
-for path in /usr/bin/designcraft /usr/bin/designcraft-cli /usr/share/doc/designcraft /usr/share/applications/ai.storyteller.designcraft.desktop /opt/irajeev-designcraft; do
+for path in /usr/bin/designcraft /usr/bin/designcraft-cli /usr/share/doc/designcraft /usr/share/applications/ai.storyteller.designcraft.desktop /usr/lib/heatcoder-designcraft; do
   if [ -e "$path" ]; then
     mkdir -p "$saved$(dirname "$path")"
     cp -a "$path" "$saved$path"

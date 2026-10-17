@@ -85,7 +85,7 @@ jobs:
           subprocess.run(["python", "scripts/smoke_packaged.py", "--cli", cli, "--work", "build/packaged-smoke"], check=True)
       - uses: actions/upload-artifact@v4
         with:
-          name: irajeev-${{ matrix.name }}
+          name: heatcoder-${{ matrix.name }}
           path: dist/*
           if-no-files-found: error
   release:
@@ -99,7 +99,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: installers
-          pattern: irajeev-*
+          pattern: heatcoder-*
       - name: Publish prerelease with all successful builds
         env:
           GH_TOKEN: ${{ github.token }}

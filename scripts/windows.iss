@@ -2,11 +2,11 @@
 #error BinDir is required
 #endif
 [Setup]
-AppId=irajeev.designcraft.indd
+AppId=heatcoder.designcraft.indd
 AppName=DesignCraft
 AppVersion={#Version}
 AppPublisher=Heatcoder
-AppPublisherURL=https://irajeev.com
+AppPublisherURL=https://github.com/heatcoder/designcraft-indd-patch
 DefaultDirName={code:ExistingDirectory}
 DefaultGroupName=DesignCraft
 UsePreviousAppDir=no

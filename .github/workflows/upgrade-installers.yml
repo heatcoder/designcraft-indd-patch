@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - 'scripts/**'
+      - 'patches/**'
+      - 'upstream.json'
       - '.github/workflows/upgrade-installers.yml'
   workflow_dispatch:
 permissions:
@@ -48,6 +50,9 @@ jobs:
       - name: Build Heatcoder UI and CLI
         working-directory: build/designcraft
         run: cargo build --release --locked -p designcraft -p designcraft-cli
+      - name: Check pending-pan paper regression
+        working-directory: build/designcraft
+        run: cargo test --release --locked -p designcraft-ui-egui pending_pan_keeps_paper
       - name: Package replacement installer
         run: python scripts/package.py --source build/designcraft --bin-dir build/designcraft/target/release
       - name: Verify extracted payload and notices

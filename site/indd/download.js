@@ -1,6 +1,6 @@
 'use strict';
 const releaseApproved=false; // Distribution audit is still open.
-const releaseTag='v0.8.0-heatcoder.5';
+const releaseTag='v0.8.0-heatcoder.6';
 const repo='heatcoder/designcraft-indd-patch';
 const osInput=document.querySelector('#os'),archInput=document.querySelector('#arch');
 const button=document.querySelector('#download'),status=document.querySelector('#status'),cancel=document.querySelector('#cancel');

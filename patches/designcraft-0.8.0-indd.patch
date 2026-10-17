@@ -52,24 +52,26 @@ index 0ec6540b..281325f1 100644
  - **Agent-native.** Every menu item, tool gesture, panel control and dialog can be driven over a
    JSON control channel and an **MCP server**, so Claude and other agents can lay out and edit
 diff --git a/ROADMAP.md b/ROADMAP.md
-index c60a0410..84e8f56d 100644
+index c60a0410..72f4dd32 100644
 --- a/ROADMAP.md
 +++ b/ROADMAP.md
-@@ -126,6 +126,8 @@ list) · [roadmap.md](docs/roadmap.md) (milestones, plan) · [parity-checklist.m
+@@ -126,6 +126,10 @@ list) · [roadmap.md](docs/roadmap.md) (milestones, plan) · [parity-checklist.m
  
  ## Progress log
  
++- **2026-10-17 · Heatcoder canvas fix** · Paint paper beneath the cached render so panning beyond its bounds does not expose the black page shadow while an asynchronous render is pending. Regression coverage at 100% and 189% zoom.
++
 +- **2026-10-17 · independent Heatcoder backport** · Direct INDD/INDT opening and embedded graphic previews, plus display-only compatibility for missing separators and quotation marks in legacy FML Malayalam fonts. Original text and encoded conjuncts are preserved. This experimental distribution does not change upstream readiness estimates.
 +
  Newest first.
  
  - **2026-10-12** · Text threads by hand: click a selected text frame's in or out port to load
-@@ -209,3 +211,6 @@ Newest first.
+@@ -209,3 +213,6 @@ Newest first.
  | 2026-10-10 | major | Restructured to the progress-docs standard; full re-measure; the "Working today" inventory moved to docs/target-app-parity.md, milestones to docs/roadmap.md, the CLI/MCP section left to docs/agents.md (which already covered it) |
  | 2026-10-04 | major | Parity estimate: breadth 99%, depth ~83%, ~170 h |
  | 2026-10-01 | major | First roadmap: status, milestones |
 +
-+- Independent Heatcoder distribution: Type → MalayalamPatch offers offline Manglish/InScript preview and Unicode insertion, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
++- Independent Heatcoder distribution: Window → Malayalam (Heatcoder) offers direct offline Manglish/InScript typing, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
 +- Heatcoder macOS build: exit after synchronous recovery/settings preservation to avoid AppKit Touch Bar observer teardown crash.
 diff --git a/apps/designcraft-web/src/web.rs b/apps/designcraft-web/src/web.rs
 index fe7cca4a..1ba0617a 100644
@@ -1030,10 +1032,24 @@ index 57801e34..c21e146e 100644
 +    assert!(d.assets.values().all(|a| a.data.is_empty() || a.link.is_none()));
 +}
 diff --git a/crates/ui-egui/src/canvas.rs b/crates/ui-egui/src/canvas.rs
-index 5d8218b7..99128c7a 100644
+index 5d8218b7..2c177934 100644
 --- a/crates/ui-egui/src/canvas.rs
 +++ b/crates/ui-egui/src/canvas.rs
-@@ -1520,6 +1520,9 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
+@@ -269,6 +269,13 @@ pub fn show(app: &mut DesignApp, ui: &mut egui::Ui) {
+         let r = xf.rect(slot.bounds);
+         painter.rect_filled(r.translate(vec2(1.5, 1.5)), 0.0, Color32::BLACK);
+     }
++    // A pending pan can expose page areas outside the cached texture. Cover the
++    // shadow with paper there while keeping the last rendered content visible.
++    let paper = doc.resolve_color(designcraft_color::swatch::PAPER, 1.0).unwrap_or(designcraft_color::Color::WHITE);
++    let [r, g, b, a] = paper.to_rgba8(1.0);
++    for slot in &layout.slots {
++        painter.rect_filled(xf.rect(slot.bounds), 0.0, Color32::from_rgba_unmultiplied(r, g, b, a));
++    }
+     // Rendered content.
+     render_texture(app, ui.ctx(), rect, &xf, &layout, preview);
+     if let (Some(tex), Some(sh)) = (&app.canvas.texture, app.canvas.shown) {
+@@ -1520,6 +1527,9 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
          events.push(PointerEvent { kind: PointerKind::Move, pos: pos(p), mods: m, clicks: 1 });
      }
      ui.data_mut(|d| d.insert_temp(down_id, down));
@@ -1043,7 +1059,7 @@ index 5d8218b7..99128c7a 100644
      for e in events {
          if let Err(err) = app.session.pointer(&e, vi) {
              app.status(err.to_string());
-@@ -1537,7 +1540,11 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
+@@ -1537,7 +1547,11 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
      for e in evs {
          match e {
              egui::Event::Text(t) if wants_text => {
@@ -1056,7 +1072,7 @@ index 5d8218b7..99128c7a 100644
              }
              egui::Event::Paste(t) if wants_text => {
                  // Formatted when the system clipboard still holds what was copied here;
-@@ -1579,6 +1586,15 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
+@@ -1579,6 +1593,15 @@ fn handle_input(app: &mut DesignApp, ui: &mut egui::Ui, resp: &egui::Response, r
                      _ => None,
                  };
                  if let Some(k) = k {
@@ -1072,6 +1088,53 @@ index 5d8218b7..99128c7a 100644
                      let m = Mods { shift: modifiers.shift, alt: modifiers.alt, cmd: modifiers.command, ctrl: modifiers.ctrl, space: false };
                      let handled = app.session.tool_key(k, m, vi).unwrap_or(false);
                      if !handled && k == ToolKey::Escape {
+@@ -1865,6 +1888,46 @@ mod tests {
+ 
+     use super::*;
+ 
++    #[cfg(not(target_arch = "wasm32"))]
++    #[test]
++    fn pending_pan_keeps_paper_under_unrendered_page_areas() {
++        for zoom in [1.0, 1.89] {
++            let mut app = DesignApp::new(designcraft_engine::Session::new(), crate::Services::default());
++            app.run("file.new", json!({})).unwrap();
++            app.ui.rulers = false;
++            *app.view_mut().unwrap() = View { zoom, origin: Point::ZERO, fitted: true, rotation: 0 };
++            let ctx = egui::Context::default();
++            let st = app.session.active().unwrap();
++            let key = (st.uid, std::sync::Arc::as_ptr(&st.doc) as u64, st.revision, false);
++            let shown = crate::Shown { doc: key, origin: Point::ZERO, zoom, size: (10.0, 10.0) };
++            app.canvas.texture =
++                Some(ctx.load_texture("old-pan-region", egui::ColorImage::new([1, 1], vec![Color32::WHITE]), egui::TextureOptions::LINEAR));
++            let texture_id = app.canvas.texture.as_ref().unwrap().id();
++            app.canvas.shown = Some(shown);
++            app.canvas.worker = crate::render_worker::Worker::spawn(ctx.clone());
++            assert!(app.canvas.worker.is_some());
++            app.canvas.worker_started = true;
++            // Hold a render pending without submitting work: deterministic uncovered-area frame.
++            app.canvas.pending = Some((42, crate::Shown { size: (10000.0, 10000.0), ..shown }));
++            let mut output = ctx
++                .run_ui(egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(600.0, 600.0))), ..Default::default() }, |ui| {
++                    show(&mut app, ui)
++                });
++            let rect = app.canvas_rect.unwrap();
++            let xf = Xf::new(rect, app.view().unwrap());
++            let layout = CanvasLayout::new(&app.session.active().unwrap().doc, false);
++            let point = xf.rect(layout.slots[0].bounds).intersect(rect).center();
++            let fill = output.shapes.iter().rev().find_map(|s| match &s.shape {
++                egui::Shape::Rect(r) if r.fill.a() > 0 && r.rect.contains(point) && s.clip_rect.contains(point) => Some(r.fill),
++                _ => None,
++            });
++            assert_eq!(fill, Some(Color32::WHITE), "newly exposed page area must not show the black shadow, zoom={zoom}");
++            assert_eq!(app.canvas.texture.as_ref().unwrap().id(), texture_id, "keep the cached content while waiting");
++            assert!(app.canvas.pending.is_some());
++            output.textures_delta.clear();
++        }
++    }
++
+     #[test]
+     fn a_press_after_a_drag_is_not_a_double_click() {
+         let (delay, dist) = (0.3, 6.0);
 diff --git a/crates/ui-egui/src/lib.rs b/crates/ui-egui/src/lib.rs
 index 1db2f591..6fcbfb52 100644
 --- a/crates/ui-egui/src/lib.rs
