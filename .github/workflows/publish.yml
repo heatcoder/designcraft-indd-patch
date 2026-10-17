@@ -50,7 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t assets < <(find installers -type f ! -name SHA256SUMS.txt | sort)
-          gh release create v0.8.0-heatcoder.6 --target "$BUILD_SHA" --prerelease \
+          gh release create v0.8.0-heatcoder.7 --target "$BUILD_SHA" --prerelease \
             --title "DesignCraft INDD patch 0.8.0 — Heatcoder" \
             --notes "Independent experimental build with direct INDD/INDT import, legacy FML separator/quote display fixes, and Malayalam (Heatcoder) offline Manglish/InScript typing. Close DesignCraft before upgrading the existing app. Review fonts, images and layout after import; save edits as DesignCraft or IDML. Unsigned installers: macOS builds are ad-hoc signed, not notarized. See the README for installation instructions and limitations. Six native build targets passed import, FML mapping, Malayalam conversion and insertion/undo regression tests before packaging." \
             SHA256SUMS.txt "${assets[@]}"

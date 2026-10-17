@@ -53,6 +53,15 @@ jobs:
       - name: Check pending-pan paper regression
         working-directory: build/designcraft
         run: cargo test --release --locked -p designcraft-ui-egui pending_pan_keeps_paper
+      - name: Check restored toolbar tools
+        working-directory: build/designcraft
+        shell: bash
+        run: |
+          cargo test --release --locked -p designcraft-tools --lib
+          cargo test --release --locked -p designcraft-engine --lib restored_tools_tests
+          cargo test --release --locked -p designcraft-engine --lib cmd::color_theme::tests
+          cargo test --release --locked -p designcraft-engine --lib cmd::path_type::tests
+          cargo test --release --locked -p designcraft-ui-egui --lib restored_tool_dialogs
       - name: Package replacement installer
         run: python scripts/package.py --source build/designcraft --bin-dir build/designcraft/target/release
       - name: Verify extracted payload and notices

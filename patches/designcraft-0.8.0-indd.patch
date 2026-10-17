@@ -51,28 +51,6 @@ index 0ec6540b..281325f1 100644
    No subscription, no licence server, no telemetry.
  - **Agent-native.** Every menu item, tool gesture, panel control and dialog can be driven over a
    JSON control channel and an **MCP server**, so Claude and other agents can lay out and edit
-diff --git a/ROADMAP.md b/ROADMAP.md
-index c60a0410..72f4dd32 100644
---- a/ROADMAP.md
-+++ b/ROADMAP.md
-@@ -126,6 +126,10 @@ list) · [roadmap.md](docs/roadmap.md) (milestones, plan) · [parity-checklist.m
- 
- ## Progress log
- 
-+- **2026-10-17 · Heatcoder canvas fix** · Paint paper beneath the cached render so panning beyond its bounds does not expose the black page shadow while an asynchronous render is pending. Regression coverage at 100% and 189% zoom.
-+
-+- **2026-10-17 · independent Heatcoder backport** · Direct INDD/INDT opening and embedded graphic previews, plus display-only compatibility for missing separators and quotation marks in legacy FML Malayalam fonts. Original text and encoded conjuncts are preserved. This experimental distribution does not change upstream readiness estimates.
-+
- Newest first.
- 
- - **2026-10-12** · Text threads by hand: click a selected text frame's in or out port to load
-@@ -209,3 +213,6 @@ Newest first.
- | 2026-10-10 | major | Restructured to the progress-docs standard; full re-measure; the "Working today" inventory moved to docs/target-app-parity.md, milestones to docs/roadmap.md, the CLI/MCP section left to docs/agents.md (which already covered it) |
- | 2026-10-04 | major | Parity estimate: breadth 99%, depth ~83%, ~170 h |
- | 2026-10-01 | major | First roadmap: status, milestones |
-+
-+- Independent Heatcoder distribution: Window → Malayalam (Heatcoder) offers direct offline Manglish/InScript typing, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
-+- Heatcoder macOS build: exit after synchronous recovery/settings preservation to avoid AppKit Touch Bar observer teardown crash.
 diff --git a/apps/designcraft-web/src/web.rs b/apps/designcraft-web/src/web.rs
 index fe7cca4a..1ba0617a 100644
 --- a/apps/designcraft-web/src/web.rs
@@ -692,26 +670,6 @@ index 00000000..35e7a662
 +        assert_eq!(s.doc().unwrap().selection, selection);
 +    }
 +}
-diff --git a/crates/engine/src/cmd/mod.rs b/crates/engine/src/cmd/mod.rs
-index affe0712..845d0991 100644
---- a/crates/engine/src/cmd/mod.rs
-+++ b/crates/engine/src/cmd/mod.rs
-@@ -28,6 +28,7 @@ mod linked;
- mod links;
- mod liquid;
- mod lists;
-+pub mod malayalam;
- mod mathexpr;
- mod media;
- mod notes;
-@@ -170,6 +171,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
-         v.extend(library::specs());
-         v.extend(lists::specs());
-         v.extend(linked::specs());
-+        v.extend(malayalam::specs());
-         v.extend(mathexpr::specs());
-         v.extend(media::specs());
-         v.extend(pdflayers::specs());
 diff --git a/crates/engine/src/cmd/text.rs b/crates/engine/src/cmd/text.rs
 index 0b87820f..ace716d8 100644
 --- a/crates/engine/src/cmd/text.rs
@@ -1492,3 +1450,891 @@ index 06f59de9..4c8ebbca 100644
  | InDesign Markup | `.idml` | read/write | ✓ | ✓ | Synthetic fixtures in `crates/idml/src/tests.rs` (49 tests); exported files verified by opening in InDesign 2026 by hand; indd-utils' 98-document run imports 811 spreads / 2,866 stories / 5,812 items. Open: #193, #338, #339, #340, #211. No real-file corpus test | 20% |
  | DesignCraft native | `.designcraft` | — | ✓ | ✓ | zip + JSON, versioned; round-trip tests. Asset loading and compaction index by content hash, then confirm byte equality; equal-sized distinct files no longer all share one search bucket (#727). Separate links, MIME types and PDF pages retain their identity | — |
  | InDesign book | `.indb` | read/write | ✗ (own `.dcbook`) | ✗ | Books are shallow (see gaps.md) | 2% |
+diff --git a/ROADMAP.md b/ROADMAP.md
+index c60a0410..9031ef38 100644
+--- a/ROADMAP.md
++++ b/ROADMAP.md
+@@ -126,6 +126,10 @@ list) · [roadmap.md](docs/roadmap.md) (milestones, plan) · [parity-checklist.m
+ 
+ ## Progress log
+ 
++- **2026-10-17 · Heatcoder canvas fix** · Paint paper beneath the cached render so panning beyond its bounds does not expose the black page shadow while an asynchronous render is pending. Regression coverage at 100% and 189% zoom.
++
++- **2026-10-17 · independent Heatcoder backport** · Direct INDD/INDT opening and embedded graphic previews, plus display-only compatibility for missing separators and quotation marks in legacy FML Malayalam fonts. Original text and encoded conjuncts are preserved. This experimental distribution does not change upstream readiness estimates.
++
+ Newest first.
+ 
+ - **2026-10-12** · Text threads by hand: click a selected text frame's in or out port to load
+@@ -209,3 +213,10 @@ Newest first.
+ | 2026-10-10 | major | Restructured to the progress-docs standard; full re-measure; the "Working today" inventory moved to docs/target-app-parity.md, milestones to docs/roadmap.md, the CLI/MCP section left to docs/agents.md (which already covered it) |
+ | 2026-10-04 | major | Parity estimate: breadth 99%, depth ~83%, ~170 h |
+ | 2026-10-01 | major | First roadmap: status, milestones |
++
++- Independent Heatcoder distribution: Window → Malayalam (Heatcoder) offers direct offline Manglish/InScript typing, with Noto Sans Malayalam supplied through external CRAFT_FONTS_DIR. Existing legacy FML text is not converted.
++- Heatcoder macOS build: exit after synchronous recovery/settings preservation to avoid AppKit Touch Bar observer teardown crash.
++
++## Heatcoder toolbar update — 17 October 2026
++
++Replaced five inactive toolbar implementations: Free Transform (move/resize/rotate/shear), Measure (distance/offsets/angle), Note (anchored editorial note editor), Color Theme (offline image/object palette), and Vertical Type on a Path. Added direct Apply Gradient fill control. Tool, engine, dialog and packaged GUI verification accompany the patch; this is not a claim of full target-app parity.
+diff --git a/crates/tools/src/utility.rs b/crates/tools/src/utility.rs
+new file mode 100644
+index 00000000..f73592b3
+--- /dev/null
++++ b/crates/tools/src/utility.rs
+@@ -0,0 +1,175 @@
++//! Interactive transform, measuring, note and colour-theme tools.
++use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey};
++use designcraft_geom::Point;
++use serde_json::json;
++
++pub struct FreeTransformTool {
++    selection: crate::select::SelectionTool,
++    shear: crate::xform::XformTool,
++    shearing: bool,
++}
++impl Default for FreeTransformTool {
++    fn default() -> Self {
++        Self { selection: crate::select::SelectionTool::new(false), shear: crate::xform::XformTool::new("shear"), shearing: false }
++    }
++}
++impl Tool for FreeTransformTool {
++    fn id(&self) -> &'static str {
++        "freeTransform"
++    }
++    fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
++        if ev.kind == PointerKind::Down {
++            self.shearing = ev.mods.cmd && ev.mods.alt && !cx.selection.items.is_empty();
++        }
++        if self.shearing {
++            let actions = self.shear.pointer(cx, ev);
++            if ev.kind == PointerKind::Up {
++                self.shearing = false;
++            }
++            return actions;
++        }
++        let mut actions = self.selection.pointer(cx, ev);
++        // Free Transform scales the contents with the frame; the selection tool can resize only the frame.
++        for action in &mut actions {
++            if let Action::Preview(command, params) = action {
++                if command == "transform.resize" {
++                    params["content"] = json!(true);
++                }
++            }
++        }
++        actions
++    }
++    fn key(&mut self, cx: &ToolContext, key: ToolKey, mods: Mods) -> Vec<Action> {
++        if self.shearing && key == ToolKey::Escape {
++            self.shear = crate::xform::XformTool::new("shear");
++            self.shearing = false;
++            return vec![Action::Cancel];
++        }
++        if self.shearing { self.shear.key(cx, key, mods) } else { self.selection.key(cx, key, mods) }
++    }
++    fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
++        if self.shearing { self.shear.overlays(cx) } else { self.selection.overlays(cx) }
++    }
++    fn cursor(&self, cx: &ToolContext, p: Point, mods: Mods) -> Cursor {
++        if self.shearing { self.shear.cursor(cx, p, mods) } else { self.selection.cursor(cx, p, mods) }
++    }
++    fn busy(&self) -> bool {
++        if self.shearing { self.shear.busy() } else { self.selection.busy() }
++    }
++}
++
++#[derive(Default)]
++pub struct MeasureTool {
++    points: Option<(Point, Point)>,
++    dragging: bool,
++}
++impl Tool for MeasureTool {
++    fn id(&self) -> &'static str {
++        "measure"
++    }
++    fn pointer(&mut self, _cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
++        if !ev.pos.x.is_finite() || !ev.pos.y.is_finite() {
++            return vec![];
++        }
++        match ev.kind {
++            PointerKind::Down => {
++                self.points = Some((ev.pos, ev.pos));
++                self.dragging = true;
++            }
++            PointerKind::Drag | PointerKind::Up if self.dragging => {
++                if let Some((a, _)) = self.points {
++                    let mut b = ev.pos;
++                    if ev.mods.shift {
++                        let v = b - a;
++                        let step = std::f64::consts::FRAC_PI_4;
++                        let angle = (v.atan2() / step).round() * step;
++                        b = a + designcraft_geom::Vec2::new(angle.cos(), angle.sin()) * v.hypot();
++                    }
++                    self.points = Some((a, b));
++                }
++                if ev.kind == PointerKind::Up {
++                    self.dragging = false;
++                }
++            }
++            _ => {}
++        }
++        vec![]
++    }
++    fn key(&mut self, _cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
++        if key == ToolKey::Escape {
++            self.points = None;
++            self.dragging = false;
++        }
++        vec![]
++    }
++    fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
++        let Some((a, b)) = self.points else { return vec![] };
++        let v = b - a;
++        let u = cx.unit;
++        vec![
++            Overlay::Line { a, b, color: [40, 120, 220], dashed: false },
++            Overlay::Measure {
++                p: b,
++                text: format!(
++                    "D {:.2} · ΔX {:.2} · ΔY {:.2} {} · {:.1}°",
++                    u.from_pt(v.hypot()),
++                    u.from_pt(v.x),
++                    u.from_pt(v.y),
++                    u.label(),
++                    v.atan2().to_degrees()
++                ),
++            },
++        ]
++    }
++    fn cursor(&self, _cx: &ToolContext, _p: Point, _mods: Mods) -> Cursor {
++        Cursor::Crosshair
++    }
++    fn busy(&self) -> bool {
++        self.dragging
++    }
++}
++
++pub struct NoteTool;
++impl Tool for NoteTool {
++    fn id(&self) -> &'static str {
++        "note"
++    }
++    fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
++        if ev.kind != PointerKind::Down {
++            return vec![];
++        }
++        let Some((spread, id)) = cx.hit(ev.pos) else {
++            return vec![];
++        };
++        if cx.doc.item(id).and_then(|i| i.text_frame()).is_none() {
++            return vec![];
++        }
++        let p = cx.layout.to_spread(spread, ev.pos);
++        vec![
++            Action::Exec("text.placeCaret".into(), json!({"frame":id.0,"point":[p.x,p.y]})),
++            Action::Dialog("editorialNote".into(), json!({"text":"","author":""})),
++        ]
++    }
++    fn cursor(&self, _cx: &ToolContext, _p: Point, _mods: Mods) -> Cursor {
++        Cursor::Text
++    }
++}
++
++pub struct ColorThemeTool;
++impl Tool for ColorThemeTool {
++    fn id(&self) -> &'static str {
++        "colorTheme"
++    }
++    fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
++        if ev.kind != PointerKind::Down {
++            return vec![];
++        }
++        let Some((spread, p)) = cx.layout.spread_at(ev.pos) else {
++            return vec![];
++        };
++        vec![Action::Dialog("colorTheme".into(), json!({"spread":spread,"at":[p.x,p.y],"name":"Color theme"}))]
++    }
++    fn cursor(&self, _cx: &ToolContext, _p: Point, _mods: Mods) -> Cursor {
++        Cursor::Eyedropper
++    }
++}
+diff --git a/crates/tools/src/lib.rs b/crates/tools/src/lib.rs
+index 8dbc262b..5ea92142 100644
+--- a/crates/tools/src/lib.rs
++++ b/crates/tools/src/lib.rs
+@@ -21,6 +21,7 @@ pub mod select;
+ pub mod snap;
+ mod text;
+ pub mod thread;
++mod utility;
+ mod xform;
+ 
+ use designcraft_compose::Cache;
+@@ -390,6 +391,10 @@ pub trait Tool: Send {
+ 
+ pub fn create(id: &str) -> Box<dyn Tool> {
+     match id {
++        "freeTransform" => Box::new(utility::FreeTransformTool::default()),
++        "measure" => Box::new(utility::MeasureTool::default()),
++        "note" => Box::new(utility::NoteTool),
++        "colorTheme" => Box::new(utility::ColorThemeTool),
+         "selection" => Box::new(select::SelectionTool::new(false)),
+         "directSelection" => Box::new(select::SelectionTool::new(true)),
+         "rectangleFrame" | "ellipseFrame" | "polygonFrame" | "rectangle" | "ellipse" | "polygon" | "line" => Box::new(frame::FrameTool::new(id)),
+@@ -413,23 +418,12 @@ pub fn create(id: &str) -> Box<dyn Tool> {
+         "placeGun" => Box::new(nav::PlaceGun::default()),
+         "zoom" => Box::new(nav::ZoomTool::default()),
+         "page" => Box::new(nav::PageTool),
+-        "typeOnPath" => Box::new(nav::PathTypeTool),
++        "verticalTypeOnPath" => Box::new(nav::PathTypeTool { vertical: true }),
++        "typeOnPath" => Box::new(nav::PathTypeTool::default()),
+         "gap" => Box::new(nav::GapTool::default()),
+         "contentCollector" => Box::new(nav::ConveyorTool::new(false)),
+         "contentPlacer" => Box::new(nav::ConveyorTool::new(true)),
+-        other => Box::new(NoopTool(tool_info(other).map(|t| t.id).unwrap_or("selection"))),
+-    }
+-}
+-
+-/// Placeholder for tools whose behaviour hasn't landed yet.
+-pub struct NoopTool(&'static str);
+-
+-impl Tool for NoopTool {
+-    fn id(&self) -> &'static str {
+-        self.0
+-    }
+-    fn pointer(&mut self, _cx: &ToolContext, _ev: &PointerEvent) -> Vec<Action> {
+-        vec![]
++        _ => Box::new(select::SelectionTool::new(false)),
+     }
+ }
+ 
+diff --git a/crates/tools/src/nav.rs b/crates/tools/src/nav.rs
+index d892b090..ea44a73c 100644
+--- a/crates/tools/src/nav.rs
++++ b/crates/tools/src/nav.rs
+@@ -188,11 +188,13 @@ impl Tool for PageTool {
+ 
+ /// Type on a Path tool (Shift+T): click a path to put type on it; typing goes there.
+ #[derive(Default)]
+-pub struct PathTypeTool;
++pub struct PathTypeTool {
++    pub vertical: bool,
++}
+ 
+ impl Tool for PathTypeTool {
+     fn id(&self) -> &'static str {
+-        "typeOnPath"
++        if self.vertical { "verticalTypeOnPath" } else { "typeOnPath" }
+     }
+     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
+         if ev.kind != PointerKind::Up {
+@@ -201,7 +203,23 @@ impl Tool for PathTypeTool {
+         let Some((_, id)) = cx.hit(ev.pos) else { return vec![] };
+         let Some(it) = cx.doc.item(id) else { return vec![] };
+         match &it.content {
+-            designcraft_doc::Content::Unassigned => vec![Action::Exec("type.onPath".into(), json!({"id": id.0})), Action::SwitchTool("type".into())],
++            designcraft_doc::Content::Unassigned => {
++                let start = cx
++                    .item_canvas_xf(id)
++                    .map(|xf| {
++                        let p = (xf * it.xf).inverse() * ev.pos;
++                        designcraft_geom::warp::PathWarp::new(&it.path.to_bezpath(), false).nearest(p)
++                    })
++                    .unwrap_or(0.0);
++                vec![
++                    Action::Exec("type.onPath".into(), json!({"id": id.0,"vertical":self.vertical,"start":start})),
++                    Action::SwitchTool("type".into()),
++                ]
++            }
++            designcraft_doc::Content::Text(tf) if tf.options.path.is_some() => {
++                let sp = cx.doc.find(id).map(|loc| cx.layout.to_spread(loc.spread, ev.pos)).unwrap_or(ev.pos);
++                vec![Action::Exec("text.placeCaret".into(), json!({"frame":id.0,"point":[sp.x,sp.y]})), Action::SwitchTool("type".into())]
++            }
+             _ => vec![],
+         }
+     }
+diff --git a/crates/tools/src/tests.rs b/crates/tools/src/tests.rs
+index 6df86485..29986e16 100644
+--- a/crates/tools/src/tests.rs
++++ b/crates/tools/src/tests.rs
+@@ -255,7 +255,10 @@ fn type_on_path_tool_targets_paths() {
+     let off = l.xf(SpreadRef::Doc(0)).translation();
+     let mut t = create("typeOnPath");
+     let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 200.0 + off.x, 100.0 + off.y));
+-    assert_eq!(a, vec![Action::Exec("type.onPath".into(), serde_json::json!({"id": id.0})), Action::SwitchTool("type".into())]);
++    assert_eq!(
++        a,
++        vec![Action::Exec("type.onPath".into(), serde_json::json!({"id": id.0, "start":100.0, "vertical":false})), Action::SwitchTool("type".into())]
++    );
+ }
+ 
+ #[test]
+@@ -1159,3 +1162,60 @@ fn eyedropper_samples_a_placed_image_and_matches_other_objects() {
+     let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 120.0 + off.x, 130.0 + off.y));
+     assert_eq!(a, vec![Action::Exec("object.matchAttributes".into(), serde_json::json!({"from": photo.0}))]);
+ }
++
++#[test]
++fn measure_tool_reports_distance_angle_and_clears_without_document_actions() {
++    let d = Document::new(&NewDocument::default());
++    let (s, c, l) = (Selection::default(), Cache::new(), CanvasLayout::new(&d, false));
++    let cx = ctx(&d, &s, &c, &l);
++    let mut t = create("measure");
++    for (kind, x, y) in [(PointerKind::Down, 10.0, 10.0), (PointerKind::Drag, 13.0, 14.0), (PointerKind::Up, 13.0, 14.0)] {
++        assert!(t.pointer(&cx, &PointerEvent::new(kind, x, y)).is_empty());
++    }
++    let overlays = t.overlays(&cx);
++    assert!(overlays.iter().any(|o| matches!(o,Overlay::Measure{text,..} if text.contains("D 5.00")&&text.contains("53.1°"))));
++    assert!(!t.busy());
++    t.key(&cx, ToolKey::Escape, Mods::default());
++    assert!(t.overlays(&cx).is_empty());
++}
++#[test]
++fn note_tool_places_a_caret_before_opening_note_editor() {
++    let mut d = Document::new(&NewDocument::default());
++    let lid = d.default_layer();
++    let (id, _) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(100., 100., 300., 200.), lid, "Note here", ParaFormat::default()).unwrap();
++    let (s, c, l) = (Selection::default(), Cache::new(), CanvasLayout::new(&d, false));
++    let cx = ctx(&d, &s, &c, &l);
++    let p = l.xf(SpreadRef::Doc(0)) * Point::new(150., 120.);
++    let a = create("note").pointer(&cx, &PointerEvent::new(PointerKind::Down, p.x, p.y));
++    assert!(matches!(&a[0],Action::Exec(cmd,p) if cmd=="text.placeCaret"&&p["frame"]==id.0));
++    assert!(matches!(&a[1],Action::Dialog(id,_) if id=="editorialNote"));
++}
++#[test]
++fn free_transform_handle_scales_contents_and_supports_shear() {
++    let mut d = Document::new(&NewDocument::default());
++    let lid = d.default_layer();
++    let (id, _) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(100., 100., 200., 200.), lid, "Scale me", ParaFormat::default()).unwrap();
++    let mut s = Selection::default();
++    s.items.push(id);
++    let (c, l) = (Cache::new(), CanvasLayout::new(&d, false));
++    let cx = ctx(&d, &s, &c, &l);
++    let xf = l.xf(SpreadRef::Doc(0));
++    let a = xf * Point::new(200., 200.);
++    let b = xf * Point::new(300., 300.);
++    let mut t = create("freeTransform");
++    assert!(matches!(&t.pointer(&cx, &PointerEvent::new(PointerKind::Down, a.x, a.y))[0], Action::Begin(_)));
++    let actions = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, b.x, b.y));
++    assert!(actions.iter().any(|a| matches!(a,Action::Preview(cmd,p) if cmd=="transform.resize"&&p["content"]==true)));
++    assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, b.x, b.y)), vec![Action::Commit]);
++    let mods = Mods { cmd: true, alt: true, ..Default::default() };
++    t.pointer(&cx, &PointerEvent::new(PointerKind::Down, a.x, a.y).with_mods(mods));
++    let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, b.x, b.y).with_mods(mods));
++    assert!(a.iter().any(|a| matches!(a,Action::Preview(cmd,_) if cmd=="transform.shear")));
++}
++
++#[test]
++fn every_catalogue_tool_has_a_concrete_implementation() {
++    for info in crate::TOOL_GROUPS.iter().flat_map(|group| group.iter()) {
++        assert_eq!(crate::create(info.id).id(), info.id, "unimplemented tool {}", info.id);
++    }
++}
+diff --git a/crates/engine/src/cmd/color_theme.rs b/crates/engine/src/cmd/color_theme.rs
+new file mode 100644
+index 00000000..8ee3017c
+--- /dev/null
++++ b/crates/engine/src/cmd/color_theme.rs
+@@ -0,0 +1,157 @@
++//! Offline colour themes from the clicked raster image or vector object's colours.
++use super::{CommandSpec, bad, cmd, has_doc, str_param};
++use crate::{Result, Session};
++use designcraft_color::{Color, Swatch};
++use designcraft_doc::{ColorGroup, Content, Styles};
++use serde_json::{Value, json};
++
++pub fn specs() -> Vec<CommandSpec> {
++    vec![
++        cmd!(query "color.theme.sample","Sample Color Theme",[],None,"{at:[x,y],spread?} → {colors:[hex]} — up to five dominant image colours, or object fill/stroke",has_doc,sample),
++        cmd!(
++            "color.theme.save",
++            "Save Color Theme",
++            [],
++            None,
++            "{name?,colors:[hex]} → {name,swatches} — save a theme as one undoable swatch group",
++            has_doc,
++            save
++        ),
++    ]
++}
++fn sample(s: &mut Session, p: &Value) -> Result<Value> {
++    let at = super::point_param(p, "at")
++        .filter(|v| v.x.is_finite() && v.y.is_finite())
++        .ok_or_else(|| bad("color.theme.sample", "a finite point is required"))?;
++    let sr = super::spread_param(p, "spread")?;
++    let d = &s.doc()?.doc;
++    if let Some((id, _)) = super::style::image_color_at(d, sr, at) {
++        if let Some(Content::Graphic(g)) = d.item(id).map(|i| &i.content) {
++            if let Some(img) = d.assets.get(&g.asset).and_then(|a| designcraft_images::decode_rgba(&a.data)) {
++                let (w, h) = img.dimensions();
++                let mut pixels = Vec::new();
++                if w > 0 && h > 0 {
++                    for y in 0..h.min(64) {
++                        for x in 0..w.min(64) {
++                            let px = img.get_pixel(
++                                (u64::from(x) * u64::from(w) / u64::from(w.min(64))) as u32,
++                                (u64::from(y) * u64::from(h) / u64::from(h.min(64))) as u32,
++                            );
++                            if px.0[3] > 127 {
++                                pixels.push([px.0[0], px.0[1], px.0[2]]);
++                            }
++                        }
++                    }
++                }
++                let colors = palette(&pixels);
++                if !colors.is_empty() {
++                    return Ok(json!({"colors":colors,"source":"image"}));
++                }
++            }
++        }
++    }
++    let sp = d.spread(sr).ok_or_else(|| bad("color.theme.sample", "no spread"))?;
++    let it = sp
++        .items
++        .iter()
++        .rev()
++        .find(|i| !i.hidden && d.layer(i.layer).is_none_or(|l| l.visible) && designcraft_doc::edit_hit(i, at, 4.0))
++        .ok_or_else(|| bad("color.theme.sample", "click a visible image or coloured object"))?;
++    let mut colors = Vec::new();
++    for (name, tint) in [(&it.fill.swatch, it.fill.tint), (&it.stroke.swatch, it.stroke.tint)] {
++        if let Some(c) = d.resolve_color(name, tint) {
++            let hex = c.to_hex();
++            if !colors.contains(&hex) {
++                colors.push(hex);
++            }
++        }
++    }
++    if colors.is_empty() {
++        return Err(bad("color.theme.sample", "the object has no sampleable fill or stroke"));
++    }
++    Ok(json!({"colors":colors,"source":"object"}))
++}
++fn palette(pixels: &[[u8; 3]]) -> Vec<String> {
++    let mut bins = std::collections::BTreeMap::<[u8; 3], (u32, [u32; 3])>::new();
++    for p in pixels.iter().take(4096) {
++        let v = bins.entry([p[0] / 16, p[1] / 16, p[2] / 16]).or_default();
++        v.0 += 1;
++        for i in 0..3 {
++            v.1[i] += u32::from(p[i]);
++        }
++    }
++    let mut bins: Vec<_> = bins.into_values().collect();
++    bins.sort_by_key(|v| std::cmp::Reverse(v.0));
++    let mut colors: Vec<[u8; 3]> = Vec::new();
++    for (n, sum) in bins {
++        let c = sum.map(|v| (v / n.max(1)) as u8);
++        if colors.iter().all(|a| a.iter().zip(c).map(|(a, b)| (i32::from(*a) - i32::from(b)).pow(2)).sum::<i32>() >= 900) {
++            colors.push(c);
++        }
++        if colors.len() == 5 {
++            break;
++        }
++    }
++    colors.iter().map(|c| format!("#{:02x}{:02x}{:02x}", c[0], c[1], c[2])).collect()
++}
++fn save(s: &mut Session, p: &Value) -> Result<Value> {
++    let list = p
++        .get("colors")
++        .and_then(Value::as_array)
++        .filter(|v| !v.is_empty() && v.len() <= 5)
++        .ok_or_else(|| bad("color.theme.save", "provide one to five colours"))?;
++    let colors: Vec<Color> =
++        list.iter().map(|v| super::style::parse_color(v).ok_or_else(|| bad("color.theme.save", "invalid colour"))).collect::<Result<_>>()?;
++    let want = str_param(p, "name").filter(|n| !n.trim().is_empty()).unwrap_or("Color theme").to_string();
++    s.edit(|d, _| {
++        let name = Styles::unique_name(|n| d.color_groups.iter().any(|g| g.name == n), &want);
++        let mut names = Vec::new();
++        for (i, c) in colors.iter().enumerate() {
++            let n = Styles::unique_name(|n| d.swatch(n).is_some(), &format!("{} {}", name, i + 1));
++            d.swatches.push(Swatch::color(&n, *c));
++            names.push(n);
++        }
++        d.color_groups.push(ColorGroup { name: name.clone(), swatches: names.clone() });
++        Ok(json!({"name":name,"swatches":names}))
++    })
++}
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn image_palette_query_preserves_document_and_samples_real_pixels() {
++        let png = designcraft_render::Rendered { width: 2, height: 1, pixels: vec![255, 0, 0, 255, 0, 0, 255, 255] }.to_png();
++        let mut s = Session::new();
++        s.execute("file.new", &json!({})).unwrap();
++        s.execute("file.place", &json!({"base64":super::super::file::base64_encode(&png),"name":"colors.png","x":72,"y":72,"width":144})).unwrap();
++        let before = serde_json::to_value(&*s.doc().unwrap().doc).unwrap();
++        let n = s.doc().unwrap().history.undo.len();
++        let r = s.execute("color.theme.sample", &json!({"at":[100,100]})).unwrap();
++        let colors = r["colors"].as_array().unwrap();
++        assert!(colors.contains(&json!("#ff0000")) && colors.contains(&json!("#0000ff")));
++        assert_eq!(before, serde_json::to_value(&*s.doc().unwrap().doc).unwrap());
++        assert_eq!(s.doc().unwrap().history.undo.len(), n);
++        assert!(s.execute("color.theme.sample", &json!({"at":[500,700]})).is_err());
++    }
++    #[test]
++    fn dominant_palette_is_bounded_and_preserves_colours() {
++        let mut p = vec![[255, 0, 0]; 100];
++        p.extend(vec![[0, 0, 255]; 50]);
++        p.extend(vec![[0, 255, 0]; 10]);
++        assert_eq!(palette(&p), vec!["#ff0000", "#0000ff", "#00ff00"]);
++        assert!(palette(&[]).is_empty());
++    }
++    #[test]
++    fn theme_save_is_atomic_and_undoable() {
++        let mut s = Session::new();
++        s.execute("file.new", &json!({})).unwrap();
++        s.execute("color.theme.save", &json!({"name":"Test","colors":["#ff0000","#0000ff"]})).unwrap();
++        assert_eq!(s.doc().unwrap().doc.color_groups.len(), 1);
++        s.execute("edit.undo", &json!({})).unwrap();
++        assert!(s.doc().unwrap().doc.color_groups.is_empty());
++        s.execute("edit.redo", &json!({})).unwrap();
++        assert_eq!(s.doc().unwrap().doc.color_groups[0].swatches.len(), 2);
++        assert!(s.execute("color.theme.save", &json!({"colors":["#ff0000","not-a-colour"]})).is_err());
++        assert_eq!(s.doc().unwrap().doc.color_groups.len(), 1);
++    }
++}
+diff --git a/crates/engine/src/cmd/path_type.rs b/crates/engine/src/cmd/path_type.rs
+index ffd852f9..8d0eec16 100644
+--- a/crates/engine/src/cmd/path_type.rs
++++ b/crates/engine/src/cmd/path_type.rs
+@@ -14,7 +14,7 @@ pub fn specs() -> Vec<CommandSpec> {
+             "Type on a Path",
+             [],
+             None,
+-            "{id: path, text?, start?: distance along the path, flip?, align?: baseline|ascender|descender|center} → {story} — the text cursor goes into it",
++            "{id: path, text?, vertical?: bool, start?: distance along the path, flip?, align?: baseline|ascender|descender|center} → {story} — the text cursor goes into it",
+             has_doc,
+             on_path
+         ),
+@@ -37,6 +37,7 @@ fn align_param(p: &Value) -> Result<Option<PathAlign>> {
+ fn on_path(s: &mut Session, p: &Value) -> Result<Value> {
+     let id = super::id_param(p, "id").ok_or_else(|| bad("type.onPath", "missing id"))?;
+     let text = super::text_param(p, "text");
++    let vertical = p.get("vertical").and_then(Value::as_bool).unwrap_or(false);
+     let mut pt = PathType {
+         start: p.get("start").and_then(Value::as_f64).unwrap_or(0.0).max(0.0),
+         flip: p.get("flip").and_then(Value::as_bool).unwrap_or(false),
+@@ -55,6 +56,7 @@ fn on_path(s: &mut Session, p: &Value) -> Result<Value> {
+         let sid = StoryId(d.alloc());
+         let mut st = Story::with_text(sid, &text, Default::default());
+         st.direction = d.new_story_direction();
++        st.vertical = vertical;
+         st.frames = vec![id];
+         d.stories.insert(sid, std::sync::Arc::new(st));
+         let it = d.item_mut(id).ok_or(designcraft_doc::DocError::NoItem(id))?;
+@@ -133,6 +135,33 @@ mod tests {
+ 
+     use crate::Session;
+ 
++    #[test]
++    fn vertical_path_composes_a_full_line_and_preserves_story_direction() {
++        let mut s = Session::new();
++        s.execute("file.new", &json!({})).unwrap();
++        let id = s.execute("line.create", &json!({"a":[100,100],"b":[100,600]})).unwrap()["id"].as_u64().unwrap();
++        let r = s.execute("type.onPath", &json!({"id":id,"text":"Vertical 日本語 sample","vertical":true})).unwrap();
++        let sid = designcraft_doc::StoryId(r["story"].as_u64().unwrap());
++        let d = s.doc().unwrap().doc.clone();
++        assert!(d.story(sid).unwrap().vertical);
++        let cs = designcraft_compose::compose_story(&d, sid, &Default::default());
++        assert!(cs.frames[0].vertical);
++        assert!(cs.overset_at.is_none());
++        assert_eq!(cs.frames[0].lines.len(), 1);
++        let it = d.item(designcraft_doc::ItemId(id)).unwrap();
++        let pt = it.text_frame().unwrap().options.path.as_ref().unwrap();
++        let glyphs = designcraft_compose::path_glyphs(&cs, &cs.frames[0], &it.path.to_bezpath(), pt);
++        assert!(!glyphs.is_empty());
++        assert!(cs.frames[0].lines[0].glyphs.iter().any(|g| g.upright), "CJK characters use vertical orientation");
++        assert!(cs.frames[0].lines[0].glyphs.iter().any(|g| !g.upright), "Latin characters retain sideways orientation");
++        s.execute("text.insert", &json!({"text":"!"})).unwrap();
++        s.execute("edit.undo", &json!({})).unwrap();
++        assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().text, "Vertical 日本語 sample");
++        let saved = serde_json::to_string(&*s.doc().unwrap().doc).unwrap();
++        let restored: designcraft_doc::Document = serde_json::from_str(&saved).unwrap();
++        assert!(restored.story(sid).unwrap().vertical);
++    }
++
+     #[test]
+     fn type_on_a_path_renders_along_the_path() {
+         let mut s = Session::new();
+diff --git a/crates/engine/src/cmd/mod.rs b/crates/engine/src/cmd/mod.rs
+index affe0712..58d66e52 100644
+--- a/crates/engine/src/cmd/mod.rs
++++ b/crates/engine/src/cmd/mod.rs
+@@ -7,6 +7,7 @@ pub mod book;
+ mod buttons;
+ pub(crate) mod captions;
+ mod changes;
++mod color_theme;
+ mod colorsettings;
+ mod conditions;
+ mod datamerge;
+@@ -28,6 +29,7 @@ mod linked;
+ mod links;
+ mod liquid;
+ mod lists;
++pub mod malayalam;
+ mod mathexpr;
+ mod media;
+ mod notes;
+@@ -170,6 +172,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
+         v.extend(library::specs());
+         v.extend(lists::specs());
+         v.extend(linked::specs());
++        v.extend(malayalam::specs());
+         v.extend(mathexpr::specs());
+         v.extend(media::specs());
+         v.extend(pdflayers::specs());
+@@ -187,6 +190,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
+         v.extend(text::specs());
+         v.extend(thread::specs());
+         v.extend(style::specs());
++        v.extend(color_theme::specs());
+         v.extend(table::specs());
+         v.extend(layout::specs());
+         v.extend(overrides::specs());
+diff --git a/crates/engine/src/tooling.rs b/crates/engine/src/tooling.rs
+index 1bf8db93..43fb1a85 100644
+--- a/crates/engine/src/tooling.rs
++++ b/crates/engine/src/tooling.rs
+@@ -196,3 +196,55 @@ impl Session {
+         }
+     }
+ }
++
++#[cfg(test)]
++mod restored_tools_tests {
++    use super::*;
++    use designcraft_geom::Point;
++    use designcraft_tools::{PointerEvent, PointerKind};
++    use serde_json::json;
++    fn event(s: &mut Session, kind: PointerKind, x: f64, y: f64) {
++        let layout = CanvasLayout::new(&s.doc().unwrap().doc, false);
++        let p = layout.xf(designcraft_doc::SpreadRef::Doc(0)) * Point::new(x, y);
++        s.pointer(&PointerEvent::new(kind, p.x, p.y), ViewInfo { snap: SnapView::OFF, ..ViewInfo::default() }).unwrap();
++    }
++    #[test]
++    fn free_transform_resize_is_one_undoable_gesture() {
++        let mut s = Session::new();
++        s.execute("file.new", &json!({})).unwrap();
++        let r = s.execute("frame.create", &json!({"rect":[100,100,200,200],"content":"text","text":"Resize"})).unwrap();
++        let id = designcraft_doc::ItemId(r["id"].as_u64().unwrap());
++        s.execute("selection.set", &json!({"ids":[id.0]})).unwrap();
++        s.set_tool("freeTransform");
++        let before = s.doc().unwrap().doc.item(id).unwrap().bounds();
++        let undo = s.doc().unwrap().history.undo.len();
++        event(&mut s, PointerKind::Down, 200., 200.);
++        event(&mut s, PointerKind::Drag, 250., 250.);
++        event(&mut s, PointerKind::Drag, 300., 300.);
++        event(&mut s, PointerKind::Up, 300., 300.);
++        let after = s.doc().unwrap().doc.item(id).unwrap().bounds();
++        assert!((after.width() - 200.).abs() < 0.01);
++        assert_eq!(s.doc().unwrap().history.undo.len(), undo + 1);
++        s.execute("edit.undo", &json!({})).unwrap();
++        assert_eq!(s.doc().unwrap().doc.item(id).unwrap().bounds(), before);
++        s.execute("edit.redo", &json!({})).unwrap();
++        assert_eq!(s.doc().unwrap().doc.item(id).unwrap().bounds(), after);
++    }
++    #[test]
++    fn note_tool_targets_text_and_saved_note_remains_editable() {
++        let mut s = Session::new();
++        s.execute("file.new", &json!({})).unwrap();
++        s.execute("frame.create", &json!({"rect":[100,100,400,200],"content":"text","text":"An editorial note belongs here."})).unwrap();
++        s.set_tool("note");
++        event(&mut s, PointerKind::Down, 140., 115.);
++        assert!(s.ui_requests.iter().any(|r| matches!(r,UiRequest::Dialog{id,..}if id=="editorialNote")));
++        let n = s.execute("note.new", &json!({"text":"Review this","author":"Editor"})).unwrap();
++        s.execute("note.edit", &json!({"story":n["story"],"id":n["id"],"text":"Reviewed"})).unwrap();
++        let bytes = serde_json::to_vec(&*s.doc().unwrap().doc).unwrap();
++        let d: designcraft_doc::Document = serde_json::from_slice(&bytes).unwrap();
++        let story = d.story(designcraft_doc::StoryId(n["story"].as_u64().unwrap())).unwrap();
++        assert_eq!(story.editorial[0].text, "Reviewed");
++        s.execute("edit.undo", &json!({})).unwrap();
++        assert_eq!(s.execute("note.list", &json!({})).unwrap()[0]["text"], "Review this");
++    }
++}
+diff --git a/crates/compose/src/lib.rs b/crates/compose/src/lib.rs
+index c6312e9f..08afd0da 100644
+--- a/crates/compose/src/lib.rs
++++ b/crates/compose/src/lib.rs
+@@ -438,8 +438,8 @@ pub fn frame_specs(doc: &Document, sid: StoryId) -> Vec<FrameSpec> {
+             None => (item.text_area(), tf.options.clone()),
+         };
+         // Vertical type: composed in the turned box; wraps and page rects turned with it.
+-        let vertical = doc.frame_vertical(item);
+-        let (area, exclusions, grid, page_rect) = if vertical {
++        let vertical = doc.frame_vertical(item) || (tf.options.path.is_some() && st.vertical);
++        let (area, exclusions, grid, page_rect) = if vertical && tf.options.path.is_none() {
+             let v = designcraft_doc::vertical_text_xf(area).inverse();
+             let ex = exclusions.into_iter().map(|e| Exclusion { rect: v.transform_rect_bbox(e.rect), ..e }).collect();
+             let pr = page_rect.map(|(a, b)| (v.transform_rect_bbox(a), v.transform_rect_bbox(b)));
+@@ -3681,8 +3681,16 @@ pub fn path_glyphs(
+             } else {
+                 designcraft_geom::Affine::IDENTITY
+             };
+-            let m =
+-                place * designcraft_geom::Affine::translate((g.x, l.baseline + g.y)) * skew * designcraft_geom::Affine::scale_non_uniform(g.sx, g.sy);
++            let turn = if ft.vertical {
++                g.vertical_xf(l.baseline).unwrap_or(designcraft_geom::Affine::IDENTITY)
++            } else {
++                designcraft_geom::Affine::IDENTITY
++            };
++            let m = place
++                * turn
++                * designcraft_geom::Affine::translate((g.x, l.baseline + g.y))
++                * skew
++                * designcraft_geom::Affine::scale_non_uniform(g.sx, g.sy);
+             let k = match runs.iter().position(|r| r.0 == g.style) {
+                 Some(k) => k,
+                 None => {
+diff --git a/crates/ui-egui/src/dialogs.rs b/crates/ui-egui/src/dialogs.rs
+index a721fdd1..001f1e0d 100644
+--- a/crates/ui-egui/src/dialogs.rs
++++ b/crates/ui-egui/src/dialogs.rs
+@@ -1149,6 +1149,8 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+         "colorSettings" => crate::i18n::tr(&app.ui.language, "Color Settings"),
+         "layerOptions" => crate::i18n::tr(&app.ui.language, "Object Layer Options"),
+         "keyboardShortcuts" => crate::i18n::tr(&app.ui.language, "Keyboard Shortcuts"),
++        "editorialNote" => "Note",
++        "colorTheme" => "Color Theme",
+         "colorPicker" => crate::i18n::tr(&app.ui.language, "Color Picker"),
+         id => match id.strip_prefix("cmd:").and_then(designcraft_engine::find_command) {
+             Some(c) => crate::i18n::tr(&app.ui.language, c.label.trim_end_matches('…')),
+@@ -1395,6 +1397,43 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+             }
+             "insertXref" => insert_xref(app, ui, &mut d),
+             "findFont" => find_font(app, ui, &mut d),
++            "editorialNote" => {
++                ui.label("Note text (not printed)");
++                let mut text = d.s("text");
++                ui.add(egui::TextEdit::multiline(&mut text).desired_rows(5).desired_width(360.0));
++                d.fields.insert("text".into(), json!(text));
++                ui.label("Author"); text_field(ui, &mut d, "author", 240.0);
++            }
++            "colorTheme" => {
++                if !d.fields.contains_key("colors") && !d.fields.contains_key("sampleError") {
++                    let params=json!({"at":d.fields.get("at"),"spread":d.fields.get("spread")});
++                    match app.run("color.theme.sample",params) {
++                        Ok(v)=>{ d.fields.insert("colors".into(),v["colors"].clone()); }
++                        Err(e)=>{ d.fields.insert("sampleError".into(),json!(e)); }
++                    }
++                }
++                ui.label("Up to five dominant image colours, or the clicked object's colours.");
++                let colors=d.fields.get("colors").and_then(Value::as_array).cloned().unwrap_or_default();
++                for color in colors {
++                    if let Some(hex)=color.as_str() {
++                        ui.horizontal(|ui| {
++                            if let Some(c)=designcraft_color::Color::from_hex(hex) {
++                                let [r,g,b,a]=c.to_rgba8(1.0);
++                                let (rect,_)=ui.allocate_exact_size(egui::vec2(28.0,22.0),egui::Sense::hover());
++                                ui.painter().rect_filled(rect,0.0,egui::Color32::from_rgba_unmultiplied(r,g,b,a));
++                            }
++                            ui.label(hex);
++                            let selected=app.session.active().is_some_and(|st| !st.selection.items.is_empty() || st.selection.text.is_some());
++                            if ui.add_enabled(selected,egui::Button::new("Apply to selection")).clicked() {
++                                let _=app.run("object.color",json!({"color":hex,"target":"fill"}));
++                            }
++                        });
++                    }
++                }
++                if d.fields.contains_key("sampleError") { ui.label(d.s("sampleError")); }
++                ui.label("Swatch group name"); text_field(ui,&mut d,"name",260.0);
++                ui.label("OK saves this palette to Swatches as one undoable colour group.");
++            }
+             "colorPicker" => color_picker(ui, &mut d),
+             "preferences" => preferences(app, ui, &mut d, body_height),
+             "print" => print_dialog(app, ui, &mut d),
+@@ -1906,6 +1945,21 @@ pub fn confirm(app: &mut DesignApp) -> Result<Value, String> {
+             }
+             r
+         }
++        "editorialNote" => {
++            let mut p=json!({"text":d.s("text"),"author":d.s("author")});
++            if let (Some(story),Some(id))=(d.fields.get("story"),d.fields.get("id")) {
++                p["story"]=story.clone();p["id"]=id.clone();app.run("note.edit",p)
++            } else { app.run("note.new",p) }
++        }
++        "colorTheme" => {
++            let result = app.run("color.theme.save",json!({"name":d.s("name"),"colors":d.fields.get("colors")}));
++            if let Err(error) = &result {
++                let mut d = d.clone();
++                d.fields.insert("sampleError".into(),json!(error));
++                app.ui.dialog = Some(d);
++            }
++            result
++        },
+         "colorPicker" => {
+             let hex = d.s("hex");
+             app.run("object.color", json!({"color": hex, "target": d.s("target"), "text": d.b("text")}))
+@@ -3932,6 +3986,24 @@ fn find_font(app: &mut DesignApp, ui: &mut egui::Ui, d: &mut Dialog) {
+ 
+ #[cfg(test)]
+ mod tests {
++    #[test]
++    fn restored_tool_dialogs_save_notes_and_themes_and_keep_invalid_input() {
++        let mut app = crate::DesignApp::new(designcraft_engine::Session::new(), crate::Services::default());
++        app.run("file.new", serde_json::json!({})).unwrap();
++        let frame = app.run("frame.create", serde_json::json!({"rect":[30,30,300,200],"content":"text","text":"Editorial"})).unwrap();
++        app.run("text.select", serde_json::json!({"story":frame["story"],"anchor":2,"focus":2})).unwrap();
++        app.ui.dialog = Some(super::Dialog::new("editorialNote", serde_json::json!({"text":"Review","author":"Editor"})));
++        super::confirm(&mut app).unwrap();
++        assert_eq!(app.run("note.list", serde_json::json!({})).unwrap()[0]["text"], "Review");
++        app.ui.dialog = Some(super::Dialog::new("colorTheme", serde_json::json!({"name":"Palette","colors":["#ff0000","#0000ff"]})));
++        super::confirm(&mut app).unwrap();
++        assert_eq!(app.session.doc().unwrap().doc.color_groups.len(), 1);
++        app.ui.dialog = Some(super::Dialog::new("colorTheme", serde_json::json!({"name":"Invalid","colors":[]})));
++        assert!(super::confirm(&mut app).is_err());
++        assert!(app.ui.dialog.is_some());
++        assert_eq!(app.session.doc().unwrap().doc.color_groups.len(), 1);
++    }
++
+     use super::*;
+ 
+     #[test]
+diff --git a/crates/ui-egui/src/panels/notes.rs b/crates/ui-egui/src/panels/notes.rs
+index 5139a090..29ecac1d 100644
+--- a/crates/ui-egui/src/panels/notes.rs
++++ b/crates/ui-egui/src/panels/notes.rs
+@@ -48,6 +48,10 @@ pub fn show(app: &mut DesignApp, ui: &mut egui::Ui) {
+             }
+             ui.label(n["text"].as_str().unwrap_or(""));
+             ui.horizontal(|ui| {
++                if ui.small_button("Edit").clicked() {
++                    app.ui.dialog =
++                        Some(crate::dialogs::Dialog::new("editorialNote", json!({"story":story,"id":nid,"text":n["text"],"author":n["author"]})));
++                }
+                 if ui.small_button(crate::rtl::widget(ui, crate::i18n::tr(&app.ui.language, "Go To"))).clicked() {
+                     let _ = app.run("text.select", json!({"story": story, "anchor": at, "focus": at + 3}));
+                 }
+diff --git a/crates/ui-egui/src/toolbar.rs b/crates/ui-egui/src/toolbar.rs
+index 6e7d9848..b326228e 100644
+--- a/crates/ui-egui/src/toolbar.rs
++++ b/crates/ui-egui/src/toolbar.rs
+@@ -320,6 +320,29 @@ fn fill_stroke_proxy(app: &mut DesignApp, ui: &mut egui::Ui, width: f32) {
+         }
+     }
+     ui.add_space(5.0);
++    // Direct Apply Color / Gradient / None controls, including the previously absent gradient shortcut.
++    ui.horizontal(|ui| {
++        ui.spacing_mut().item_spacing.x = 2.0;
++        let size = ((width - 12.0) / 3.0).clamp(8.0, 18.0);
++        for (icon, label, action) in [("format-container", "Apply Color", 0), ("tool-gradient", "Apply Gradient Fill", 1), ("none", "Apply None", 2)]
++        {
++            let enabled = action != 1 || (!text_mode && !stroke_front && app.session.active().is_some_and(|st| !st.selection.items.is_empty()));
++            let response = ui.add_enabled_ui(enabled, |ui| icons::button(ui, icon, size, false, label));
++            if response.inner.clicked() {
++                match action {
++                    0 => {
++                        let _ = crate::panels::apply_swatch(app, stroke_front, "[Black]", None);
++                    }
++                    1 => {
++                        let _ = app.run("object.gradient", json!({}));
++                    }
++                    _ => {
++                        let _ = app.run("color.applyNone", json!({}));
++                    }
++                }
++            }
++        }
++    });
+     // Apply None well (flyout: Apply Color / Gradient / None).
+     let (row, _) = ui.allocate_exact_size(vec2(width, 21.0), Sense::hover());
+     let well = egui::Rect::from_center_size(egui::pos2(row.min.x + width / 2.0, row.center().y), vec2(28.0, 21.0));
