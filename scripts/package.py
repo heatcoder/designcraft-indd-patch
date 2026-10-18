@@ -52,7 +52,7 @@ if system=='Darwin':
           'CFBundleDisplayName':'DesignCraft','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.8.0','CFBundleVersion':'0.8.7',
           'HeatcoderPatchVersion':VERSION,'LSMinimumSystemVersion':'11.0','NSHighResolutionCapable':True,'CFBundleIconFile':'DesignCraft',
           'NSHumanReadableCopyright':'DesignCraft authors. INDD patch distribution: Heatcoder.',
-          'CFBundleDocumentTypes':[{'CFBundleTypeName':'DesignCraft and InDesign documents','CFBundleTypeRole':'Editor','LSHandlerRank':'Alternate','CFBundleTypeExtensions':['designcraft','idml','indd','indt']}]}
+          'CFBundleDocumentTypes':[{'CFBundleTypeName':'DesignCraft, INDD and IDML documents','CFBundleTypeRole':'Editor','LSHandlerRank':'Alternate','CFBundleTypeExtensions':['designcraft','idml','indd','indt']}]}
     (contents/'Info.plist').write_bytes(plistlib.dumps(info))
     run('codesign','--force','--deep','--sign','-','--timestamp=none',app)
     run('codesign','--verify','--deep','--strict',app)
@@ -67,7 +67,7 @@ if system=='Darwin':
     cp.write_bytes(plistlib.dumps(components))
     run('pkgbuild','--root',work/'root','--component-plist',cp,'--identifier','com.heatcoder.designcraft.indd','--version','0.8.7','--install-location','/Applications','--scripts',ROOT/'scripts/macos',component)
     resources=work/'resources';resources.mkdir()
-    (resources/'welcome.html').write_text('''<html><body style="font-family:Helvetica;color:#273d37;background:#faf7f2;padding:20px"><h1 style="font-family:Georgia;font-size:44px;font-weight:normal">Heatcoder</h1><h2>DesignCraft · INDD opening</h2><p>Published by Heatcoder.</p><p>Update DesignCraft in Applications. Close DesignCraft first. Your previous app is backed up under /Library/Application Support/Heatcoder/DesignCraft Backups. Documents and settings are preserved.</p><p>Open InDesign documents directly from File → Open. Save edits as DesignCraft or IDML.</p><p>This independent experimental build uses the DesignCraft and indd-utils open-source projects. Layout, fonts and linked images require review.</p></body></html>''', encoding='utf-8')
+    (resources/'welcome.html').write_text('''<html><body style="font-family:Helvetica;color:#273d37;background:#faf7f2;padding:20px"><h1 style="font-family:Georgia;font-size:44px;font-weight:normal">Heatcoder</h1><h2>DesignCraft · INDD opening</h2><p>Published by Heatcoder.</p><p>Update DesignCraft in Applications. Close DesignCraft first. Your previous app is backed up under /Library/Application Support/Heatcoder/DesignCraft Backups. Documents and settings are preserved.</p><p>Open INDD documents directly from File → Open. Save edits as DesignCraft or IDML.</p><p>This independent experimental build uses the DesignCraft and indd-utils open-source projects. Layout, fonts and linked images require review.</p></body></html>''', encoding='utf-8')
     (resources/'conclusion.html').write_text('''<html><body style="font-family:Helvetica;padding:20px"><h1>Ready to open INDD</h1><p>Open <b>Applications → DesignCraft</b>, then choose File → Open.</p><p>Your previous app is saved in /Library/Application Support/Heatcoder/DesignCraft Backups. Keep your original INDD documents and check imported layouts before production use.</p><p>Heatcoder</p></body></html>''', encoding='utf-8')
     copy(ROOT/'NOTICE.md',resources/'notice.txt')
     dist=work/'Distribution.xml'

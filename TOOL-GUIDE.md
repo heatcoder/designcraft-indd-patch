@@ -9,4 +9,4 @@ Installed and tested on this Mac as Heatcoder 0.8.0-heatcoder.7. Other-platform 
 - **Vertical Type on a Path:** open the Type tool group, choose the vertical path tool, click an empty path at the desired starting point, then type. Existing path text remains editable.
 - **Apply Gradient:** select an object, bring Fill to the front, then use the gradient button below the fill/stroke controls.
 
-Right-click a tool group to reveal its other tools. Color Theme samples the whole placed image, not only its crop. Gradient application here is for object fills. These additions do not claim complete feature parity with InDesign.
+Right-click a tool group to reveal its other tools. Color Theme samples the whole placed image, not only its crop. Gradient application here is for object fills. Check these tools with your own layouts before production use.

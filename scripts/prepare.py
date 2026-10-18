@@ -15,4 +15,6 @@ subprocess.run(['git','apply','--check',str(patch)],cwd=dest,check=True)
 subprocess.run(['git','apply',str(patch)],cwd=dest,check=True)
 from customize import customize
 customize(dest)
+from indd_wording import apply as apply_indd_wording
+apply_indd_wording(dest)
 print(f'Prepared {dest}')
